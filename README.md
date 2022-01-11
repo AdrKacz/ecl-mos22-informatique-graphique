@@ -394,13 +394,69 @@ int main(int argc, char* argv[]) {
 
 ## Résultat
 
-![outputs](./outputs/be1-1.png)
+![BE1-1](./outputs/be1-1.png)
 
 > Temps pour la création de l'image: 233.621ms
 
 ## Améliorations
 
-- [ ] Calcul parallèle avec `<thread>`
+## Parallélisation
+
+```c++
+#include <thread>
+#define NB_THREAD_GRID 4 // grid n * n > NB_THREAD = NB_THREAD_GRID * NB_THREAD_GRID
+```
+
+```c++
+int main(int argc, char* argv[]) {
+	// ...
+
+    // Thread
+    const int step = std::ceil(512 / NB_THREAD_GRID);
+    std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID];
+
+    // ...
+    for (int x = 0; x < NB_THREAD_GRID; x++)    
+    {
+        for (int y = 0; y < NB_THREAD_GRID; y++) {
+            threads[NB_THREAD_GRID * x + y] = std::thread([x, y, &step, &z, &E, &W, &H, &C, &rho, &I, &image]()
+            {
+                // ...
+            });
+        }
+    }
+    
+    for (int x = 0; x < NB_THREAD_GRID; x++)    
+    {
+        for (int y = 0; y < NB_THREAD_GRID; y++) {
+            threads[x * NB_THREAD_GRID + y].join();
+        }
+    }
+    // ...
+}
+```
+
+![BE1-Parallel](./outputs/be1-parallel.png)
+
+> Temps pour la création de l'image: 54.0334ms
+
+**Nous avons diviser le temps de calcul par environ `4.5`.**
+
+Pour voir l'exécution des `thread`, nous annulons l'éxécution sur la diagonale.
+
+```c++
+if (x == y)
+{
+    continue;
+}
+```
+
+![BE1-Parallel-Diag](./outputs/be1-parallel-diag.png)
+
+> Temps pour la création de l'image: 41.6291ms
+
+# Notes
+- [x] Calcul parallèle avec `<thread>`
     - Mesure de le différence de temps de calcul
 - [ ] Écrire le code dans plusieurs fichiers au lieu d'avoir un grand fichier
 
