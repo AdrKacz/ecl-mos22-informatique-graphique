@@ -203,47 +203,8 @@ bool Sphere::intersect(const Ray& r) {
 }
 
 bool Sphere::intersect(const Ray& r, Vector& P, Vector& N) {
-    double a = 1;
-    double b = 2 * r.u.dot(r.C - O);
-    double c = (r.C - O).norm2() - R * R;
-    double delta = b * b - 4 * a * c;
-
-    if (delta > 0)
-    {
-        double sqrt_delta = sqrt(delta);
-        double t1 = (-b - sqrt_delta) / 2 * a;
-        double t2 = (-b + sqrt_delta) / 2 * a;
-        if (t1 >= 0) {    
-            P = r.C + r.u * t1;
-            N = (P - O);
-            N.normalize();
-            return true;
-        } else if (t2 >= 0) {
-            P = r.C + r.u * t2;
-            N = (P - O);
-            N.normalize();
-            return true;
-        } else {
-            return false;
-        }
-    } else if (delta == 0)
-    {
-        double sqrt_delta = sqrt(delta);
-        double t = (-b - sqrt_delta) / 2 * a;
-        if (t >= 0)
-        {
-            P = r.C + r.u * t;
-            N = (P - O);
-            N.normalize();
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    } else {
-        return false;
-    }
+    double T;
+    return intersect(r, P, N, T);
 }
 
 bool Sphere::intersect(const Ray& r, Vector& P, Vector& N, double& T) {
@@ -310,6 +271,10 @@ void Environment::add_sphere(const Sphere& s)
     spheres.push_back(s);
 }
 
+void Environment::add_light(const Vector& l) {
+    lights.push_back(l);
+}
+
 bool Environment::intersect(const Ray& r)
 {
     for (int i = 0; i < spheres.size(); i++)
@@ -341,10 +306,6 @@ bool Environment::intersect(const Ray& r, Vector& P, Vector& N)
     }
 
     return has_intersected;  
-}
-
-void Environment::add_light(const Vector& l) {
-    lights.push_back(l);
 }
 
 double Environment::get_intensity(const Vector& N, const Vector& P, const double& I, const double& rho) {
