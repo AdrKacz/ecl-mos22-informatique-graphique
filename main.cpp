@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <cmath>
+#include <thread>
 
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <vector>
@@ -390,6 +391,7 @@ int main(int argc, char* argv[]) {
     double rho = M_PI;
     double I = 5e6;
 
+    auto start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < H; i++) {
 		for (int j = 0; j < W; j++) {    
             Vector u = Vector(j - W / 2 + 0.5, H - i - H / 2 + 0.5, z);
@@ -408,6 +410,10 @@ int main(int argc, char* argv[]) {
             }
 		}
 	}
+    auto end = std::chrono::high_resolution_clock::now();
+    auto diff_sec = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+    std::cout << "Temps pour la création de l'image: " << diff_sec.count() / 1000000.0 << "ms\n";
 
     std::string filename = "image";
     if (argc > 1) {
