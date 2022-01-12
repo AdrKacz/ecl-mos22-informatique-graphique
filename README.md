@@ -1,6 +1,37 @@
 # ecl-mos22-informatique-graphique
 Travail réalisé pour le MOS 2.2 - Informatique Graphique à l'École Centrale de Lyon. L'objectif est d'implémenter un PathTracer en C++
 
+# Comment exécuter le code ?
+
+1. Installer [`cmake`](https://cmake.org/install/) *(cela devrait déjà être le cas)*
+
+2. Cloner le répertoire
+
+```
+git clone https://github.com/AdrKacz/ecl-mos22-informatique-graphique.git
+cd ecl-mos22-informatique-graphique
+```
+
+3. Créer un dossier `./build` et lancer le *build*
+
+```
+mkdir build
+cmake ..
+make
+```
+
+4. Exécuter le code
+
+```
+./InformatiqueGraphique
+./InformatiqueGraphique mon-image.png
+```
+
+# Notes
+- [x] Calcul parallèle avec `<thread>`
+    - Mesure de le différence de temps de calcul
+- [X] Écrire le code dans plusieurs fichiers au lieu d'avoir un grand fichier
+
 # BE1
 
 ## Objectif
@@ -9,322 +40,13 @@ Travail réalisé pour le MOS 2.2 - Informatique Graphique à l'École Centrale 
 - Source de lumière
 - Boîte encapsulant la scène
 
-## Vector
+## [Vector](src/Vector)
 
-```c++
-class Vector
-{
-private:
-    double vec[3];
-public:
-    Vector();
-    Vector(double x, double y, double z);
-    ~Vector();
+## [Ray](src/Ray)
 
-    double operator[](int i) const { return vec[i]; };
-    double& operator[](int i) {return vec[i];};
+## [Sphere](src/Sphere)
 
-    Vector operator+(const Vector&) const;
-    Vector operator-(const Vector&) const;
-    Vector operator*(const double) const;
-    Vector operator/(const double) const;
-
-    double dot(const Vector&) const;
-    Vector cross(const Vector&);
-
-    double norm2() const;
-    double norm() const;
-    void normalize();
-};
-```
-
-```c++
-Vector::Vector()
-{
-    vec[0] = 5;
-    vec[1] = 5;
-    vec[2] = 5;
-}
-
-Vector::Vector(double x, double y, double z)
-{
-    vec[0] = x;
-    vec[1] = y;
-    vec[2] = z;
-}
-
-Vector::~Vector()
-{
-}
-```
-
-```c++
-Vector Vector::operator+(const Vector& param) const
-{
-    return Vector(vec[0] + param[0], vec[1] + param[1], vec[2] + param[2]);
-
-}
-
-Vector Vector::operator-(const Vector& param) const
-{
-    return Vector(vec[0] - param[0], vec[1] - param[1], vec[2] - param[2]);
-
-}
-
-Vector Vector::operator*(const double param) const
-{
-    return Vector(vec[0] * param, vec[1] * param, vec[2] * param);
-
-}
-
-Vector Vector::operator/(const double param) const
-{
-    return Vector(vec[0] / param, vec[1] / param, vec[2] / param);
-
-}
-```
-
-```c++
-double Vector::dot(const Vector& param) const {
-    return vec[0] * param[0] + vec[1] * param[1] + vec[2] * param[2];
-}
-
-Vector Vector::cross(const Vector& param) {
-    return Vector(vec[1] * param[2] - vec[2] * param[1], vec[2] * param[0] - vec[0] * param[2], vec[0] * param[1] - vec[1] * param[0]);
-}
-
-double Vector::norm2() const {
-    return vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2];
-}
-
-double Vector::norm() const {
-    return sqrt(norm2());
-}
-
-void Vector::normalize() {
-    double n = norm();
-    vec[0] /= n;
-    vec[1] /= n;
-    vec[2] /= n;
-}
-```
-
-## Ray
-
-```c++
-class Ray
-{
-private:
-public:
-    Vector C, u;
-    Ray(const Vector&, const Vector&);
-    ~Ray();
-};
-```
-
-```c++
-Ray::Ray(const Vector& a, const Vector& b)
-{
-    C = a;
-    u = b;
-}
-
-Ray::~Ray()
-{
-
-}
-```
-
-## Sphere
-
-```c++
-class Sphere
-{
-private:
-    Vector O;
-    double R;
-public:
-    Sphere();
-    Sphere(const Vector&, double);
-    ~Sphere();
-
-    bool intersect(const Ray&);
-    bool intersect(const Ray&, Vector&, Vector&);
-    bool intersect(const Ray&, Vector&, Vector&, double&);
-};
-```
-
-```c++
-Sphere::Sphere()
-{
-    O = Vector(0, 0, 5);
-    R = 1;
-}
-
-Sphere::Sphere(const Vector& a, double b)
-{
-    O = a;
-    R = b;
-}
-
-Sphere::~Sphere()
-{
-}
-```
-
-```c++
-bool Sphere::intersect(const Ray& r) {
-    double a = 1;
-    double b = 2 * r.u.dot(r.C - O);
-    double c = (r.C - O).norm2() - R * R;
-    double delta = b * b - 4 * a * c;
-    return delta >= 0;
-}
-
-bool Sphere::intersect(const Ray& r, Vector& P, Vector& N) {
-    double T;
-    return intersect(r, P, N, T);
-}
-
-bool Sphere::intersect(const Ray& r, Vector& P, Vector& N, double& T) {
-    double a = 1;
-    double b = 2 * r.u.dot(r.C - O);
-    double c = (r.C - O).norm2() - R * R;
-    double delta = b * b - 4 * a * c;
-
-    if (delta > 0)
-    {
-        double sqrt_delta = sqrt(delta);
-        double t1 = (-b - sqrt_delta) / 2 * a;
-        double t2 = (-b + sqrt_delta) / 2 * a;
-        if (t1 >= 0) {    
-            T = t1;
-            P = r.C + r.u * t1;
-            N = (P - O);
-            N.normalize();
-            return true;
-        } else if (t2 >= 0) {
-            T = t2;
-            P = r.C + r.u * t2;
-            N = (P - O);
-            N.normalize();
-            return true;
-        } else {
-            return false;
-        }
-    } else if (delta == 0)
-    {
-        double sqrt_delta = sqrt(delta);
-        double t = (-b - sqrt_delta) / 2 * a;
-        if (t >= 0)
-        {
-            T = t;
-            P = r.C + r.u * t;
-            N = (P - O);
-            N.normalize();
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    } else {
-        return false;
-    }
-}
-```
-
-## Environment
-
-```c++
-class Environment
-{
-private:
-    std::vector<Sphere> spheres;
-    std::vector<Vector> lights;
-public:
-    Environment();
-    ~Environment();
-
-    void add_sphere(const Sphere&);
-    bool intersect(const Ray&);
-    bool intersect(const Ray&, Vector&, Vector&);
-
-    void add_light(const Vector&);
-    double get_intensity(const Vector&, const Vector&, const double&, const double&);
-}
-```
-
-```c++
-Environment::Environment()
-{
-}
-
-Environment::~Environment()
-{
-}
-```
-
-```c++
-void Environment::add_sphere(const Sphere& s)
-{
-    spheres.push_back(s);
-}
-
-void Environment::add_light(const Vector& l) {
-    lights.push_back(l);
-}
-```
-
-```c++
-bool Environment::intersect(const Ray& r)
-{
-    for (int i = 0; i < spheres.size(); i++)
-    {
-        if (spheres[i].intersect(r)) {
-            return true;
-        }
-    }
-    return false;
-    
-}
-
-bool Environment::intersect(const Ray& r, Vector& P, Vector& N)
-{
-    bool has_intersected = false;
-    double T = std::numeric_limits<double>::max();
-    for (int i = 0; i < spheres.size(); i++)
-    {
-        double t;
-        Vector p, n;
-        if (spheres[i].intersect(r, p, n, t)) {
-            has_intersected = true;
-            if (t < T) {
-                T = t;
-                P = p;
-                N = n;
-            }
-        }
-    }
-
-    return has_intersected;  
-}
-```
-
-```c++
-double Environment::get_intensity(const Vector& N, const Vector& P, const double& I, const double& rho) {
-    double intensity = 0.;
-    for (int i = 0; i < lights.size(); i++)
-    {
-        Vector L = lights[i];
-        Vector l = (L - P);
-        l.normalize();
-        double local_intensity = I * l.dot(N) * rho / (4 * M_PI * M_PI * (L - P).norm2());
-        intensity += local_intensity;
-    }
-    return clamp(intensity, 0., 255.);
-}
-```
+## [Environment](src/Environment)
 
 ## Main
 
@@ -454,10 +176,5 @@ if (x == y)
 ![BE1-Parallel-Diag](./outputs/be1-parallel-diag.png)
 
 > Temps pour la création de l'image: 41.6291ms
-
-# Notes
-- [x] Calcul parallèle avec `<thread>`
-    - Mesure de le différence de temps de calcul
-- [ ] Écrire le code dans plusieurs fichiers au lieu d'avoir un grand fichier
 
 
