@@ -3,6 +3,8 @@
 #include <cmath>
 #include <thread>
 
+#include <ncurses.h>
+
 #include "src/Vector/Vector.h"
 #include "src/Ray/Ray.h"
 #include "src/Sphere/Sphere.h"
@@ -30,6 +32,52 @@ double clamp(const double& v, const double& low, const double& high) {
 // ===== ===== ===== ===== Main
 // ===== ===== ===== =====
 
+void refresh(std::string filename, std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID], const int step, double z, Environment& E, const int W, const int H, Vector& C, double rho, double I, double I_pow_factor, std::vector<unsigned char>& image) {
+    auto start = std::chrono::high_resolution_clock::now();
+    for (int x = 0; x < NB_THREAD_GRID; x++)    
+    {
+        for (int y = 0; y < NB_THREAD_GRID; y++) {
+            // uncomment to see black diagonal (thread not active)
+            // if (x == y) { continue; }
+            threads[NB_THREAD_GRID * x + y] = std::thread([x, y, &step, &z, &E, &W, &H, &C, &rho, &I, &I_pow_factor, &image]()
+            {
+                for (int i = y * step; i < std::min(H, (y + 1) * step); i++) {
+                    for (int j = x * step; j < std::min(W, (x + 1) * step); j++) {    
+                        Vector u = Vector(j - W / 2 + 0.5, H - i - H / 2 + 0.5, z);
+                        u.normalize();
+                        Ray r = Ray(C, u);
+
+                        Vector P, N;
+                        int sphere_index;
+                        if (E.intersect(r, P, N, &sphere_index))
+                        {
+                            Vector intensity = E.get_intensity(N, P, I, rho, sphere_index, r, 0);
+                            image[(i*W + j) * 3 + 0] = clamp(std::pow(intensity[0], I_pow_factor), 0., 255.);;
+                            image[(i*W + j) * 3 + 1] = clamp(std::pow(intensity[1], I_pow_factor), 0., 255.);;
+                            image[(i*W + j) * 3 + 2] = clamp(std::pow(intensity[2], I_pow_factor), 0., 255.);;
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    for (int x = 0; x < NB_THREAD_GRID; x++)    
+    {
+        for (int y = 0; y < NB_THREAD_GRID; y++) {
+            // uncomment to see black diagonal (thread not active)
+            // if (x == y) { continue; }
+            threads[x * NB_THREAD_GRID + y].join();
+        }
+    }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto diff_sec = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+    // std::cout << "Temps pour la création de l'image: " << diff_sec.count() / 1000000.0 << "ms\n";
+
+    stbi_write_png(filename.c_str(), W, H, 3, &image[0], 0);
+}
+
 int main(int argc, char* argv[]) {
     // Get filename if any
     std::string filename = "image.png";
@@ -43,8 +91,8 @@ int main(int argc, char* argv[]) {
     filename = "../outputs/" + filename;
 
     // Dimension
-	int W = PIXELS_DIMENSION;
-	int H = PIXELS_DIMENSION;
+	const int W = PIXELS_DIMENSION;
+	const int H = PIXELS_DIMENSION;
 
     // Thread
     const int step = std::ceil(PIXELS_DIMENSION / NB_THREAD_GRID);
@@ -79,50 +127,32 @@ int main(int argc, char* argv[]) {
     double I = 1e10;
     double I_pow_factor = 1. / 2.2;
 
-    auto start = std::chrono::high_resolution_clock::now();
-    for (int x = 0; x < NB_THREAD_GRID; x++)    
-    {
-        for (int y = 0; y < NB_THREAD_GRID; y++) {
-            // uncomment to see black diagonal (thread not active)
-            // if (x == y) { continue; }
-            threads[NB_THREAD_GRID * x + y] = std::thread([x, y, &step, &z, &E, &W, &H, &C, &rho, &I, &I_pow_factor, &image]()
-            {
-                for (int i = y * step; i < std::min(H, (y + 1) * step); i++) {
-                    for (int j = x * step; j < std::min(W, (x + 1) * step); j++) {    
-                        Vector u = Vector(j - W / 2 + 0.5, H - i - H / 2 + 0.5, z);
-                        u.normalize();
-                        Ray r = Ray(C, u);
-
-                        Vector P, N;
-                        int sphere_index;
-                        if (E.intersect(r, P, N, &sphere_index))
-                        {
-                            Vector intensity = E.get_intensity(N, P, I, rho, sphere_index, r, 0);
-                            image[(i*W + j) * 3 + 0] = clamp(std::pow(intensity[0], I_pow_factor), 0., 255.);;
-                            image[(i*W + j) * 3 + 1] = clamp(std::pow(intensity[1], I_pow_factor), 0., 255.);;
-                            image[(i*W + j) * 3 + 2] = clamp(std::pow(intensity[2], I_pow_factor), 0., 255.);;
-                        }
-                    }
-                }
-            });
+    bool is_alive = true;
+    char c = ' ';
+    while (is_alive) {
+        refresh(filename, threads, step, z, E, W, H, C, rho, I, I_pow_factor, image);
+        std::cin >> c;
+        switch (c)
+        {
+        case 'z':
+            C[2] -= 1;
+            break;
+        case 's':
+            C[2] += 1;
+            break;
+        case 'q':
+            C[0] -= 1;
+            break;
+        case 'd':
+            C[0] += 1;
+            break;
+        default:
+            is_alive = false;
+            break;
         }
     }
+
     
-    for (int x = 0; x < NB_THREAD_GRID; x++)    
-    {
-        for (int y = 0; y < NB_THREAD_GRID; y++) {
-            // uncomment to see black diagonal (thread not active)
-            // if (x == y) { continue; }
-            threads[x * NB_THREAD_GRID + y].join();
-        }
-    }
-    auto end = std::chrono::high_resolution_clock::now();
-    auto diff_sec = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-
-    std::cout << "Temps pour la création de l'image: " << diff_sec.count() / 1000000.0 << "ms\n";
-
-    stbi_write_png(filename.c_str(), W, H, 3, &image[0], 0);
 	
-
 	return 0;
 }
