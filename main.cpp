@@ -49,9 +49,9 @@ int main(int argc, char* argv[]) {
     std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID];
 
     Environment E = Environment();
-    E.add_sphere(Sphere(Vector(0, 0, 0), 10, Sphere::TYPE_TRANSPARENT, 2.));
+    E.add_sphere(Sphere(Vector(0, 0, 0), 10, Vector(1, 0, 0.5)));
     E.add_sphere(Sphere(Vector(20, 0, 0), 5, Sphere::TYPE_REFLECTIVE));
-    // E.add_sphere(Sphere(Vector(0, 0, 20), 3, Sphere::TYPE_TRANSPARENT, 2.));
+    E.add_sphere(Sphere(Vector(5, 0, 20), 3, Sphere::TYPE_TRANSPARENT, 1.5));
 
     E.add_sphere(Sphere(Vector(-10050, 0, 0), 10000));
     E.add_sphere(Sphere(Vector(+10050, 0, 0), 10000));
