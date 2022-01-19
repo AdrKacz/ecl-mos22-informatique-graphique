@@ -8,6 +8,8 @@
 #include "src/Sphere/Sphere.h"
 #include "src/Environment/Environment.h"
 
+#define HALF_BOX_DIMENSION 50 // in world unit
+#define PIXELS_DIMENSION 256 // in pixels
 #define NB_THREAD_GRID 4 // grid n * n > NB_THREAD = NB_THREAD_GRID * NB_THREAD_GRID
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -41,11 +43,11 @@ int main(int argc, char* argv[]) {
     filename = "../outputs/" + filename;
 
     // Dimension
-	int W = 512;
-	int H = 512;
+	int W = PIXELS_DIMENSION;
+	int H = PIXELS_DIMENSION;
 
     // Thread
-    const int step = std::ceil(512 / NB_THREAD_GRID);
+    const int step = std::ceil(PIXELS_DIMENSION / NB_THREAD_GRID);
     std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID];
 
     Environment E = Environment();
@@ -53,13 +55,16 @@ int main(int argc, char* argv[]) {
     E.add_sphere(Sphere(Vector(20, 0, 0), 5, Sphere::TYPE_REFLECTIVE));
     E.add_sphere(Sphere(Vector(5, 0, 20), 3, Sphere::TYPE_TRANSPARENT, 1.5));
 
-    E.add_sphere(Sphere(Vector(-10050, 0, 0), 10000));
-    E.add_sphere(Sphere(Vector(+10050, 0, 0), 10000));
-    E.add_sphere(Sphere(Vector(0, -10050, 0), 10000));
-    E.add_sphere(Sphere(Vector(0, +10050, 0), 10000));
-    E.add_sphere(Sphere(Vector(0, 0, -10050), 10000));
-    E.add_sphere(Sphere(Vector(0, 0, +10050), 10000, Vector(0.8, 0.5, 0)));
+    // Box
+    const double wall_size = HALF_BOX_DIMENSION * 1e3;
+    E.add_sphere(Sphere(Vector(- wall_size - HALF_BOX_DIMENSION, 0, 0), wall_size));
+    E.add_sphere(Sphere(Vector(+ wall_size + HALF_BOX_DIMENSION, 0, 0), wall_size));
+    E.add_sphere(Sphere(Vector(0, - wall_size - HALF_BOX_DIMENSION, 0), wall_size));
+    E.add_sphere(Sphere(Vector(0, + wall_size + HALF_BOX_DIMENSION, 0), wall_size));
+    E.add_sphere(Sphere(Vector(0, 0, - wall_size - HALF_BOX_DIMENSION), wall_size));
+    E.add_sphere(Sphere(Vector(0, 0, + wall_size + HALF_BOX_DIMENSION), wall_size, Vector(0.8, 0.5, 0)));
 
+    // Light
     E.add_light(Vector(30, 30, 25));
     // E.add_light(Vector(-20, -20, -15));
     

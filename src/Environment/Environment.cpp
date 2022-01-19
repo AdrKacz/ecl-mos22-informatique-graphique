@@ -1,7 +1,5 @@
 #include "Environment.h"
 
-#include <iostream>
-
 // ===== ===== ===== =====
 // ===== ===== ===== ===== Helpers
 // ===== ===== ===== =====
@@ -98,7 +96,7 @@ double Environment::get_intensity(const Vector& N, const Vector& P, const double
 }
 
 Vector Environment::get_intensity(const Vector& N, const Vector& P, const double& I, const double& rho, int sphere_index) {
-    Vector intensity = Vector();
+    double intensity = .0;
     for (int i = 0; i < lights.size(); i++)
     {
         Vector L = lights[i];
@@ -116,9 +114,9 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
             }
         }
         double local_intensity = I * l.dot(N) * rho / (4 * M_PI * M_PI * (L - P).norm2());
-        intensity = intensity + spheres[sphere_index].albedo * local_intensity;        
+        intensity += local_intensity;        
     }
-    return intensity;
+    return spheres[sphere_index].albedo * intensity;
 }
 
 Vector Environment::get_intensity(const Vector& N, const Vector& P, const double& I, const double& rho, int sphere_index, const Ray& bounce_i, int bounces) {
@@ -166,7 +164,7 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
     }
 
     // Measure light from surface
-    Vector intensity = Vector();
+    double intensity = .0;
     for (int i = 0; i < lights.size(); i++)
     {
         Vector L = lights[i];
@@ -184,7 +182,8 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
             }
         }
         double local_intensity = I * l.dot(N) * rho / (4 * M_PI * M_PI * (L - P).norm2());
-        intensity = intensity + spheres[sphere_index].albedo * local_intensity;        
+        intensity += local_intensity;        
     }
-    return intensity;
+
+    return spheres[sphere_index].albedo * intensity;
 }

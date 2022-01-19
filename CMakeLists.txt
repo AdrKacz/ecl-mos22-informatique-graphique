@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.0)
 
 # Set specific std
-add_definitions(-std=c++17)
+add_definitions(-std=c++20)
 
 # How to set option -Ipthread for g++ ??
 

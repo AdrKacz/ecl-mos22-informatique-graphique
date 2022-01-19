@@ -1,6 +1,8 @@
 #ifndef DEF_ENVIRONMENT
 #define DEF_ENVIRONMENT
 
+// #include <iostream>
+
 #include <cmath>
 #include <vector>
 #include "../Vector/Vector.h"
