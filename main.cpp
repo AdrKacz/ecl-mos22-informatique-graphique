@@ -49,14 +49,16 @@ int main(int argc, char* argv[]) {
     std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID];
 
     Environment E = Environment();
-    E.add_sphere(Sphere(Vector(0, 0, 0), 10));
+    E.add_sphere(Sphere(Vector(0, 0, 0), 10, Sphere::TYPE_TRANSPARENT, 2.));
+    E.add_sphere(Sphere(Vector(20, 0, 0), 5, Sphere::TYPE_REFLECTIVE));
+    // E.add_sphere(Sphere(Vector(0, 0, 20), 3, Sphere::TYPE_TRANSPARENT, 2.));
 
     E.add_sphere(Sphere(Vector(-10050, 0, 0), 10000));
     E.add_sphere(Sphere(Vector(+10050, 0, 0), 10000));
     E.add_sphere(Sphere(Vector(0, -10050, 0), 10000));
     E.add_sphere(Sphere(Vector(0, +10050, 0), 10000));
     E.add_sphere(Sphere(Vector(0, 0, -10050), 10000));
-    E.add_sphere(Sphere(Vector(0, 0, +10050), 10000));
+    E.add_sphere(Sphere(Vector(0, 0, +10050), 10000, Vector(0.8, 0.5, 0)));
 
     E.add_light(Vector(30, 30, 25));
     // E.add_light(Vector(-20, -20, -15));
@@ -69,7 +71,8 @@ int main(int argc, char* argv[]) {
 	std::vector<unsigned char> image(W*H * 3, 0);
 
     double rho = M_PI;
-    double I = 5e6;
+    double I = 1e10;
+    double I_pow_factor = 1. / 2.2;
 
     auto start = std::chrono::high_resolution_clock::now();
     for (int x = 0; x < NB_THREAD_GRID; x++)    
@@ -77,7 +80,7 @@ int main(int argc, char* argv[]) {
         for (int y = 0; y < NB_THREAD_GRID; y++) {
             // uncomment to see black diagonal (thread not active)
             // if (x == y) { continue; }
-            threads[NB_THREAD_GRID * x + y] = std::thread([x, y, &step, &z, &E, &W, &H, &C, &rho, &I, &image]()
+            threads[NB_THREAD_GRID * x + y] = std::thread([x, y, &step, &z, &E, &W, &H, &C, &rho, &I, &I_pow_factor, &image]()
             {
                 for (int i = y * step; i < std::min(H, (y + 1) * step); i++) {
                     for (int j = x * step; j < std::min(W, (x + 1) * step); j++) {    
@@ -86,14 +89,13 @@ int main(int argc, char* argv[]) {
                         Ray r = Ray(C, u);
 
                         Vector P, N;
-                        if (E.intersect(r, P, N))
+                        int sphere_index;
+                        if (E.intersect(r, P, N, &sphere_index))
                         {
-                            double intensity = E.get_intensity(N, P, I, rho);
-                            intensity = clamp(intensity, 0., 255.);
-                            
-                            image[(i*W + j) * 3 + 0] = intensity;
-                            image[(i*W + j) * 3 + 1] = intensity;
-                            image[(i*W + j) * 3 + 2] = intensity;
+                            Vector intensity = E.get_intensity(N, P, I, rho, sphere_index, r, 0);
+                            image[(i*W + j) * 3 + 0] = clamp(std::pow(intensity[0], I_pow_factor), 0., 255.);;
+                            image[(i*W + j) * 3 + 1] = clamp(std::pow(intensity[1], I_pow_factor), 0., 255.);;
+                            image[(i*W + j) * 3 + 2] = clamp(std::pow(intensity[2], I_pow_factor), 0., 255.);;
                         }
                     }
                 }

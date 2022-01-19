@@ -2,9 +2,9 @@
 
 Vector::Vector()
 {
-    vec[0] = 5;
-    vec[1] = 5;
-    vec[2] = 5;
+    vec[0] = .0;
+    vec[1] = .0;
+    vec[2] = .0;
 }
 
 Vector::Vector(double x, double y, double z)

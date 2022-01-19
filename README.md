@@ -16,6 +16,7 @@ cd ecl-mos22-informatique-graphique
 
 ```
 mkdir build
+cd build
 cmake ..
 make
 ```
@@ -26,6 +27,8 @@ make
 ./InformatiqueGraphique
 ./InformatiqueGraphique mon-image.png
 ```
+
+> Pour compiler et exécuter le code : `make && ./InformatiqueGraphique`
 
 # Notes
 - [x] Calcul parallèle avec `<thread>`
