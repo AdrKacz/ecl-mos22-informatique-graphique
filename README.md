@@ -1,3 +1,5 @@
+![Mouvement dans l'espace](./outputs/be2-extra-movement.gif)
+
 # ecl-mos22-informatique-graphique
 Travail réalisé pour le MOS 2.2 - Informatique Graphique à l'École Centrale de Lyon. L'objectif est d'implémenter un PathTracer en C++
 
@@ -29,6 +31,26 @@ make
 ```
 
 > Pour compiler et exécuter le code : `make && ./InformatiqueGraphique`
+
+# Comment se déplacer
+
+> Séquence utiliser pour la présentation : `zzzzzzddddddzzzzzzzzzqqqqqzzzzzzzzqqqqqsssss`
+
+1. Lancer le programme comme précedement
+2. Utiliser `zqsd` pour se déplacer
+ - `z` : en avant
+ - `s` : en arrière
+ - `q` : tourner à gauche
+ - `d` : tourner à droite
+3. `ENTER` pour valider la suite de mouvements (tu peux entrer plus d'un déplacement à la fois pour une animation plus longue)
+
+Par exemple, si je souhaite faire deux pas en avant puis regarder à gaude de deux crans, je peux entrer : 
+
+```
+zzqq
+```
+
+Puis `ENTER` (le programme ne s'actualise pas tant que tu ne cliques pas sur `ENTER`, c'est une limitation que je vais essayer de corriger prochainement)
 
 # Notes
 - [x] Calcul parallèle avec `<thread>`
@@ -123,9 +145,9 @@ int main(int argc, char* argv[]) {
 
 > Temps pour la création de l'image: 233.621ms
 
-## Améliorations
+## BE 1 - Extra
 
-## Parallélisation
+### Parallélisation
 
 ```c++
 #include <thread>
@@ -180,4 +202,14 @@ if (x == y)
 
 > Temps pour la création de l'image: 41.6291ms
 
+# BE 2
 
+## Objectif
+
+- Construire des ombres projetées
+- Construire des matériaux réfléchissants
+- Construire des matériaux transparents
+
+## BE 2 - Extra
+
+### Déplacement dans l'espace

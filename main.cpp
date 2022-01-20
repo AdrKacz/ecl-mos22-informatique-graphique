@@ -5,6 +5,7 @@
 
 #include <ncurses.h>
 
+#include "src/Camera/Camera.h"
 #include "src/Vector/Vector.h"
 #include "src/Ray/Ray.h"
 #include "src/Sphere/Sphere.h"
@@ -32,7 +33,7 @@ double clamp(const double& v, const double& low, const double& high) {
 // ===== ===== ===== ===== Main
 // ===== ===== ===== =====
 
-void refresh(std::string filename, std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID], const int step, double z, Environment& E, const int W, const int H, Vector& C, double rho, double I, double I_pow_factor, std::vector<unsigned char>& image) {
+void refresh(std::string filename, std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID], const int step, double z, Environment& E, const int W, const int H, Camera& C, double rho, double I, double I_pow_factor, std::vector<unsigned char>& image) {
     auto start = std::chrono::high_resolution_clock::now();
     for (int x = 0; x < NB_THREAD_GRID; x++)    
     {
@@ -45,7 +46,7 @@ void refresh(std::string filename, std::thread threads[NB_THREAD_GRID * NB_THREA
                     for (int j = x * step; j < std::min(W, (x + 1) * step); j++) {    
                         Vector u = Vector(j - W / 2 + 0.5, H - i - H / 2 + 0.5, z);
                         u.normalize();
-                        Ray r = Ray(C, u);
+                        Ray r = Ray(C.get_position(), C.look_from(u));
 
                         Vector P, N;
                         int sphere_index;
@@ -116,10 +117,10 @@ int main(int argc, char* argv[]) {
     E.add_light(Vector(30, 30, 25));
     // E.add_light(Vector(-20, -20, -15));
     
-
-    Vector C = Vector(0, 0, 40);
+    // Camera
+    Camera C = Camera(Vector(0, 0, 40));
     double alpha = 90 * M_PI / 180;
-    double z = - W / (2 * tan(alpha / 2));
+    double z = - PIXELS_DIMENSION / (2 * tan(alpha / 2));
 	
 	std::vector<unsigned char> image(W*H * 3, 0);
 
@@ -127,6 +128,7 @@ int main(int argc, char* argv[]) {
     double I = 1e10;
     double I_pow_factor = 1. / 2.2;
 
+    std::string mvt_sequence = "";
     bool is_alive = true;
     char c = ' ';
     while (is_alive) {
@@ -135,22 +137,25 @@ int main(int argc, char* argv[]) {
         switch (c)
         {
         case 'z':
-            C[2] -= 1;
+            C.move_forward(1.);
             break;
         case 's':
-            C[2] += 1;
+            C.move_forward(-1.);
             break;
         case 'q':
-            C[0] -= 1;
+            C.rotate(- M_PI / 12);
             break;
         case 'd':
-            C[0] += 1;
+            C.rotate(+ M_PI / 12);
             break;
         default:
             is_alive = false;
             break;
         }
+        mvt_sequence += c;
     }
+
+    std::cout << "Movement Sequence:\n" << mvt_sequence;
 
     
 	

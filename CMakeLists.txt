@@ -17,6 +17,7 @@ set(SRC_DIR src)
 add_executable(
   InformatiqueGraphique
   main.cpp
+  ${SRC_DIR}/Camera/Camera.cpp
   ${SRC_DIR}/Vector/Vector.cpp
   ${SRC_DIR}/Ray/Ray.cpp
   ${SRC_DIR}/Sphere/Sphere.cpp
