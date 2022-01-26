@@ -213,3 +213,50 @@ if (x == y)
 ## BE 2 - Extra
 
 ### Déplacement dans l'espace
+
+```c++
+int main(int argc, char* argv[]) {
+    // ...
+    std::string mvt_sequence = "";
+    bool is_alive = true;
+    char c = ' ';
+    while (is_alive) {
+            refresh(filename, threads, step, z, E, W, H, C, rho, I, I_pow_factor, image);
+            std::cin >> c;
+            switch (c)
+            {
+            case 'z':
+                C.move_forward(1.);
+                break;
+            case 's':
+                C.move_forward(-1.);
+                break;
+            case 'a':
+                C.move_right(1.);
+                break;
+            case 'e':
+                C.move_right(-1.);
+                break;
+            case 'q':
+                C.rotate(- M_PI / 12);
+                break;
+            case 'd':
+                C.rotate(+ M_PI / 12);
+                break;
+            default:
+                is_alive = false;
+                break;
+            }
+            mvt_sequence += c;
+    }
+    std::cout << "Movement Sequence:\n" << mvt_sequence;    
+	
+	return 0;
+}
+```
+
+### Réflection totale dans les matériaux transparent (TODO)
+
+# BE 3
+
+> BRDF Databse: https://www.merl.com/brdf/

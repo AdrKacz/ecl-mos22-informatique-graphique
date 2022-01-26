@@ -161,9 +161,7 @@ int main(int argc, char* argv[]) {
         mvt_sequence += c;
     }
 
-    std::cout << "Movement Sequence:\n" << mvt_sequence;
-
-    
+    std::cout << "Movement Sequence:\n" << mvt_sequence;    
 	
 	return 0;
 }
