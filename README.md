@@ -260,3 +260,4 @@ int main(int argc, char* argv[]) {
 # BE 3
 
 > BRDF Databse: https://www.merl.com/brdf/
+> Global Illumination Compendium: https://people.cs.kuleuven.be/~philip.dutre/GI/

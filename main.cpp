@@ -11,9 +11,12 @@
 #include "src/Sphere/Sphere.h"
 #include "src/Environment/Environment.h"
 
+#define DYNAMIC_MOVEMENT false // true to move with arrow key, false to generate one image
+
+
 #define HALF_BOX_DIMENSION 50 // in world unit
-#define PIXELS_DIMENSION 256 // in pixels
-#define NB_THREAD_GRID 4 // grid n * n > NB_THREAD = NB_THREAD_GRID * NB_THREAD_GRID
+#define PIXELS_DIMENSION 1024 // in pixels
+#define NB_THREAD_GRID 6 // grid n * n > NB_THREAD = NB_THREAD_GRID * NB_THREAD_GRID
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "library/stb_image_write.h"
@@ -74,7 +77,10 @@ void refresh(std::string filename, std::thread threads[NB_THREAD_GRID * NB_THREA
     auto end = std::chrono::high_resolution_clock::now();
     auto diff_sec = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 
-    // std::cout << "Temps pour la création de l'image: " << diff_sec.count() / 1000000.0 << "ms\n";
+    if (!DYNAMIC_MOVEMENT)
+    {
+        std::cout << "Temps pour la création de l'image: " << diff_sec.count() / 1000000.0 << "ms\n";
+    }
 
     stbi_write_png(filename.c_str(), W, H, 3, &image[0], 0);
 }
@@ -96,7 +102,7 @@ int main(int argc, char* argv[]) {
 	const int H = PIXELS_DIMENSION;
 
     // Thread
-    const int step = std::ceil(PIXELS_DIMENSION / NB_THREAD_GRID);
+    const int step = std::ceil(PIXELS_DIMENSION * 1.0 / NB_THREAD_GRID * 1.0);
     std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID];
 
     Environment E = Environment();
@@ -133,6 +139,11 @@ int main(int argc, char* argv[]) {
     char c = ' ';
     while (is_alive) {
         refresh(filename, threads, step, z, E, W, H, C, rho, I, I_pow_factor, image);
+        if (!DYNAMIC_MOVEMENT)
+        {
+            is_alive = false;
+            continue;
+        }
         std::cin >> c;
         switch (c)
         {
@@ -142,16 +153,16 @@ int main(int argc, char* argv[]) {
         case 's':
             C.move_forward(-1.);
             break;
-        case 'a':
+        case 'd':
             C.move_right(1.);
             break;
-        case 'e':
+        case 'q':
             C.move_right(-1.);
             break;
-        case 'q':
+        case 'a':
             C.rotate(- M_PI / 12);
             break;
-        case 'd':
+        case 'e':
             C.rotate(+ M_PI / 12);
             break;
         default:
@@ -160,8 +171,11 @@ int main(int argc, char* argv[]) {
         }
         mvt_sequence += c;
     }
+    
+    if (DYNAMIC_MOVEMENT)
+    {
+        std::cout << "Movement Sequence:\n" << mvt_sequence; 
+    }
 
-    std::cout << "Movement Sequence:\n" << mvt_sequence;    
-	
 	return 0;
 }

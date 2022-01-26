@@ -33,7 +33,7 @@ void Camera::move_forward(double d)
 
 void Camera::move_right(double d)
 {
-    Vector direction_xz = Vector(-1, 0, 0);
+    Vector direction_xz = Vector(1, 0, 0);
     direction_xz.normalize();
     position = position + look_from(direction_xz) * 2. * d;
 }
