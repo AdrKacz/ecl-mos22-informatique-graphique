@@ -31,6 +31,13 @@ void Camera::move_forward(double d)
     position = position + look_from(direction_xz) * 2. * d;
 }
 
+void Camera::move_right(double d)
+{
+    Vector direction_xz = Vector(-1, 0, 0);
+    direction_xz.normalize();
+    position = position + look_from(direction_xz) * 2. * d;
+}
+
 void Camera::rotate(double a)
 {
     angle += a;

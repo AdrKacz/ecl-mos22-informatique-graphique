@@ -16,6 +16,7 @@ public:
     const Vector get_position();
 
     void move_forward(double);
+    void move_right(double);
     void rotate(double);
     Vector look_from(const Vector&);
 

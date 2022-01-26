@@ -142,6 +142,12 @@ int main(int argc, char* argv[]) {
         case 's':
             C.move_forward(-1.);
             break;
+        case 'a':
+            C.move_right(1.);
+            break;
+        case 'e':
+            C.move_right(-1.);
+            break;
         case 'q':
             C.rotate(- M_PI / 12);
             break;
