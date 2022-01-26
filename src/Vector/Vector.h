@@ -18,6 +18,7 @@ public:
     Vector operator+(const Vector&) const;
     Vector operator-(const Vector&) const;
     Vector operator*(const double) const;
+    Vector operator*(const Vector param) const;
     Vector operator/(const double) const;
 
     double dot(const Vector&) const;

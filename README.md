@@ -261,3 +261,10 @@ int main(int argc, char* argv[]) {
 
 > BRDF Databse: https://www.merl.com/brdf/
 > Global Illumination Compendium: https://people.cs.kuleuven.be/~philip.dutre/GI/
+
+
+128 rayons par pixels.
+
+![be3-indirect-lighting-128-rays](./outputs/indirect-lighting-128-rays.png)
+
+> Temps pour la création de l'image: 26219.4ms

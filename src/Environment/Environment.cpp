@@ -4,6 +4,11 @@
 // ===== ===== ===== ===== Helpers
 // ===== ===== ===== =====
 
+#include <random>
+
+std::default_random_engine generator;
+std::uniform_real_distribution<float> distrib(0.0, 1.0);
+
 static double clamp(const double& v, const double& low, const double& high) {
     return std::max(std::min(v, high), low);
 }
@@ -92,10 +97,10 @@ double Environment::get_intensity(const Vector& N, const Vector& P, const double
         
         
     }
-    return intensity;
+    return intensity / M_PI;
 }
 
-Vector Environment::get_intensity(const Vector& N, const Vector& P, const double& I, const double& rho, int sphere_index) {
+Vector Environment::get_intensity(const Vector& N, const Vector& P, const double& I, int sphere_index) {
     double intensity = .0;
     for (int i = 0; i < lights.size(); i++)
     {
@@ -113,13 +118,13 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
                 continue;
             }
         }
-        double local_intensity = I * l.dot(N) * rho / (4 * M_PI * M_PI * (L - P).norm2());
+        double local_intensity = I * l.dot(N) / (4 * M_PI * M_PI * (L - P).norm2());
         intensity += local_intensity;        
     }
-    return spheres[sphere_index].albedo * intensity;
+    return spheres[sphere_index].albedo * intensity / M_PI;
 }
 
-Vector Environment::get_intensity(const Vector& N, const Vector& P, const double& I, const double& rho, int sphere_index, const Ray& bounce_i, int bounces) {
+Vector Environment::get_intensity(const Vector& N, const Vector& P, const double& I, int sphere_index, const Ray& bounce_i, int bounces) {
     if (bounces >= Environment::BOUNCES_MAX) {
         return Vector();
     }
@@ -133,7 +138,7 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
         Ray bounce_r = Ray(P + N * .01, r);
         Vector bounce_P, bounce_N;
         if (intersect(bounce_r, bounce_P, bounce_N, &sphere_index)) {
-            return get_intensity(bounce_N, bounce_P, I, rho, sphere_index, bounce_r, bounces + 1);
+            return get_intensity(bounce_N, bounce_P, I, sphere_index, bounce_r, bounces + 1);
         }
         return Vector();
     } else if (spheres[sphere_index].is_transparent)
@@ -158,13 +163,16 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
         Ray bounce_t = Ray(P + t * .01, t);
         Vector bounce_P, bounce_N;
         if (intersect(bounce_t, bounce_P, bounce_N, &sphere_index)) {
-            return get_intensity(bounce_N, bounce_P, I, rho, sphere_index, bounce_t, bounces + 1);
+            return get_intensity(bounce_N, bounce_P, I, sphere_index, bounce_t, bounces + 1);
         }
         return Vector();
     }
 
+    // Sphere is diffuse
     // Measure light from surface
     double intensity = .0;
+
+    // Direct lighting
     for (int i = 0; i < lights.size(); i++)
     {
         Vector L = lights[i];
@@ -181,9 +189,45 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
                 continue;
             }
         }
-        double local_intensity = I * l.dot(N) * rho / (4 * M_PI * M_PI * (L - P).norm2());
+        double local_intensity = I * l.dot(N) / (4 * M_PI * M_PI * (L - P).norm2());
         intensity += local_intensity;        
     }
 
-    return spheres[sphere_index].albedo * intensity;
+    if (!use_indirect_lighting) 
+    {
+        return spheres[sphere_index].albedo * intensity / M_PI;
+    }
+
+    // Indirect lighting
+    float r1 = distrib(generator);
+    float r2 = distrib(generator);
+    float x = cos(2 * M_PI * r1) * sqrt(1 - r2);
+    float y = sin(2 * M_PI * r1) * sqrt(1 - r2);
+    float z = sqrt(r2);
+
+    Vector T1, T2;
+    if (N[0] < N[1] && N[0] < N[2]) // Nx smallest
+    {
+        T1 = Vector(0, -N[2], N[1]);
+    } else if (N[0] < N[1] && N[0] < N[2]) // Ny smallest
+    {
+        T1 = Vector(-N[2], 0, N[0]);
+    } else { // nz smallest
+        T1 = Vector(-N[1], N[0], 0);
+    }
+    T1.normalize();
+    T2 = T1.cross(N);  
+    T2.normalize();
+
+    Vector w_i = T1 * x + T2 * y + N * z;
+    w_i.normalize();
+    Ray indirect_r = Ray(P + N * .01, w_i);
+    Vector indirect_P, indirect_N;
+    Vector indirect_intensity;
+    int sphere_index_indirect;
+    if (intersect(indirect_r, indirect_P, indirect_N, &sphere_index_indirect)) {
+        indirect_intensity = get_intensity(indirect_N, indirect_P, I, sphere_index_indirect, indirect_r, bounces + 1);
+    }
+
+    return spheres[sphere_index].albedo * intensity / M_PI + spheres[sphere_index].albedo * indirect_intensity;
 }

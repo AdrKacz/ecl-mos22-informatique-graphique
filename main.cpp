@@ -2,8 +2,9 @@
 #include <string>
 #include <cmath>
 #include <thread>
+#include <random>
 
-#include <ncurses.h>
+// #include <ncurses.h>
 
 #include "src/Camera/Camera.h"
 #include "src/Vector/Vector.h"
@@ -11,11 +12,14 @@
 #include "src/Sphere/Sphere.h"
 #include "src/Environment/Environment.h"
 
+#define USE_BOX_MULLER false
+#define USE_INDIRECT_LIGHTING true
 #define DYNAMIC_MOVEMENT false // true to move with arrow key, false to generate one image
+#define INDIRECT_RAYS 32 // indirect rays number
 
 
 #define HALF_BOX_DIMENSION 50 // in world unit
-#define PIXELS_DIMENSION 1024 // in pixels
+#define PIXELS_DIMENSION 256 // in pixels
 #define NB_THREAD_GRID 6 // grid n * n > NB_THREAD = NB_THREAD_GRID * NB_THREAD_GRID
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -32,34 +36,56 @@ double clamp(const double& v, const double& low, const double& high) {
     return std::max(std::min(v, high), low);
 }
 
+std::default_random_engine main_generator;
+std::uniform_real_distribution<float> main_distrib(0.0, 1.0);
+Vector box_muller() {
+    float u = main_distrib(main_generator);
+    float v = main_distrib(main_generator);
+
+    float x = cos(2 * M_PI * u) * sqrt(-2 * log(v));
+    float y = sin(2 * M_PI * u) * sqrt(-2 * log(v));
+
+    return Vector(x, y, 0);
+}
+
 // ===== ===== ===== =====
 // ===== ===== ===== ===== Main
 // ===== ===== ===== =====
 
-void refresh(std::string filename, std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID], const int step, double z, Environment& E, const int W, const int H, Camera& C, double rho, double I, double I_pow_factor, std::vector<unsigned char>& image) {
+void refresh(std::string filename, std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID], const int step, double z, Environment& E, const int W, const int H, Camera& C, double I, double I_pow_factor, std::vector<unsigned char>& image) {
     auto start = std::chrono::high_resolution_clock::now();
     for (int x = 0; x < NB_THREAD_GRID; x++)    
     {
         for (int y = 0; y < NB_THREAD_GRID; y++) {
             // uncomment to see black diagonal (thread not active)
             // if (x == y) { continue; }
-            threads[NB_THREAD_GRID * x + y] = std::thread([x, y, &step, &z, &E, &W, &H, &C, &rho, &I, &I_pow_factor, &image]()
+            threads[NB_THREAD_GRID * x + y] = std::thread([x, y, &step, &z, &E, &W, &H, &C, &I, &I_pow_factor, &image]()
             {
                 for (int i = y * step; i < std::min(H, (y + 1) * step); i++) {
-                    for (int j = x * step; j < std::min(W, (x + 1) * step); j++) {    
-                        Vector u = Vector(j - W / 2 + 0.5, H - i - H / 2 + 0.5, z);
-                        u.normalize();
-                        Ray r = Ray(C.get_position(), C.look_from(u));
+                    for (int j = x * step; j < std::min(W, (x + 1) * step); j++) {
+                        Vector intensity = Vector();
+                        // INDIRECT_RAYS rays at random
+                        for (int k = 0; k < INDIRECT_RAYS; k++) {
+                            Vector u = Vector(j - W / 2 + 0.5, H - i - H / 2 + 0.5, z);
+                            if (USE_BOX_MULLER) {
+                                Vector random_box = box_muller();
+                                u[0] += random_box[0];
+                                u[1] += random_box[1];
+                            }
+                            u.normalize();
+                            Ray r = Ray(C.get_position(), C.look_from(u));
 
-                        Vector P, N;
-                        int sphere_index;
-                        if (E.intersect(r, P, N, &sphere_index))
-                        {
-                            Vector intensity = E.get_intensity(N, P, I, rho, sphere_index, r, 0);
-                            image[(i*W + j) * 3 + 0] = clamp(std::pow(intensity[0], I_pow_factor), 0., 255.);;
-                            image[(i*W + j) * 3 + 1] = clamp(std::pow(intensity[1], I_pow_factor), 0., 255.);;
-                            image[(i*W + j) * 3 + 2] = clamp(std::pow(intensity[2], I_pow_factor), 0., 255.);;
+                            Vector P, N;
+                            int sphere_index;
+                            if (E.intersect(r, P, N, &sphere_index))
+                            {
+                                intensity = intensity + E.get_intensity(N, P, I, sphere_index, r, 0);
+                            }
                         }
+                        intensity = intensity / INDIRECT_RAYS * 1.0;
+                        image[(i*W + j) * 3 + 0] = clamp(std::pow(intensity[0], I_pow_factor), 0., 255.);
+                        image[(i*W + j) * 3 + 1] = clamp(std::pow(intensity[1], I_pow_factor), 0., 255.);
+                        image[(i*W + j) * 3 + 2] = clamp(std::pow(intensity[2], I_pow_factor), 0., 255.);
                     }
                 }
             });
@@ -97,6 +123,11 @@ int main(int argc, char* argv[]) {
     }
     filename = "../outputs/" + filename;
 
+    Vector test_box = box_muller();
+    std::cout << test_box[0] << "\n";
+    std::cout << test_box[1] << "\n";
+    std::cout << test_box[2] << "\n";
+
     // Dimension
 	const int W = PIXELS_DIMENSION;
 	const int H = PIXELS_DIMENSION;
@@ -122,6 +153,9 @@ int main(int argc, char* argv[]) {
     // Light
     E.add_light(Vector(30, 30, 25));
     // E.add_light(Vector(-20, -20, -15));
+
+    // Indirect lighting
+    E.use_indirect_lighting = USE_INDIRECT_LIGHTING;
     
     // Camera
     Camera C = Camera(Vector(0, 0, 40));
@@ -130,7 +164,6 @@ int main(int argc, char* argv[]) {
 	
 	std::vector<unsigned char> image(W*H * 3, 0);
 
-    double rho = M_PI;
     double I = 1e10;
     double I_pow_factor = 1. / 2.2;
 
@@ -138,7 +171,7 @@ int main(int argc, char* argv[]) {
     bool is_alive = true;
     char c = ' ';
     while (is_alive) {
-        refresh(filename, threads, step, z, E, W, H, C, rho, I, I_pow_factor, image);
+        refresh(filename, threads, step, z, E, W, H, C, I, I_pow_factor, image);
         if (!DYNAMIC_MOVEMENT)
         {
             is_alive = false;

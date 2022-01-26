@@ -36,6 +36,12 @@ Vector Vector::operator*(const double param) const
 
 }
 
+Vector Vector::operator*(const Vector param) const
+{
+    return Vector(vec[0] * param[0], vec[1] * param[1], vec[2] * param[2]);
+
+}
+
 Vector Vector::operator/(const double param) const
 {
     return Vector(vec[0] / param, vec[1] / param, vec[2] / param);

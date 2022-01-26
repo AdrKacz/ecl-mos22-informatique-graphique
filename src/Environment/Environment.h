@@ -17,6 +17,7 @@ private:
 public:
     static const int BOUNCES_MAX = 5;
     static constexpr double N_AMBIANT = 1.;
+    bool use_indirect_lighting = true;
 
     Environment();
     ~Environment();
@@ -28,8 +29,8 @@ public:
 
     void add_light(const Vector&);
     double get_intensity(const Vector&, const Vector&, const double&, const double&);
-    Vector get_intensity(const Vector&, const Vector&, const double&, const double&, int);
-    Vector get_intensity(const Vector&, const Vector&, const double&, const double&, int, const Ray&, int);
+    Vector get_intensity(const Vector&, const Vector&, const double&, int);
+    Vector get_intensity(const Vector&, const Vector&, const double&, int, const Ray&, int);
 };
 
 #endif
