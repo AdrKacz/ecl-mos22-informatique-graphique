@@ -7,18 +7,20 @@
 
 class Sphere
 {
-private:
-    Vector O = Vector(0, 0, 5);
-    double R = 1.;
 public:
     static const int TYPE_DIFFUSE = 0;
     static const int TYPE_REFLECTIVE = 1;
     static const int TYPE_TRANSPARENT = 2;
+    static const int TYPE_EMISSIVE = 3;
 
-    bool is_reflective = false;
-    Vector albedo = Vector(1., 1., 1.);
-    bool is_transparent = false;
-    double n = 1.;
+    Vector O = Vector(0, 0, 5);
+    double R = 1.;
+
+    int type = 0.; // default to diffuse
+
+    Vector albedo = Vector(1., 1., 1.); // diffuse and emissive
+    double n = 1.; // transparent
+    double intensity = 1.; // emissive
     
     Sphere();
     Sphere(const Vector&, double);

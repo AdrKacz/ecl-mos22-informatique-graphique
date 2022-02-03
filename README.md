@@ -268,3 +268,39 @@ int main(int argc, char* argv[]) {
 ![be3-indirect-lighting-128-rays](./outputs/indirect-lighting-128-rays.png)
 
 > Temps pour la création de l'image: 26219.4ms
+
+Anti-aliasing avec Box-Muller, `sigma = 0.5`, `32 rayons`.
+
+![be3-indirect-lighting-128-rays](./outputs/be3-box-muller-sigma05.png)
+
+> Temps pour la création de l'image: 6749.88.4ms
+
+# BE 4 (absent)
+
+![be4-light-r5.png](./outputs/be4-light-r5.png)
+
+> Temps pour la création de l'image: 3922.12ms
+
+![be4-light-r20.png](./outputs/be4-light-r20.png)
+
+> Temps pour la création de l'image: 4106.09ms
+
+![be4-light-smart-r5.png](./outputs/be4-light-smart-r5.png)
+
+> Temps pour la création de l'image: 8059.9ms
+
+![be4-light-smart-r20.png](./outputs/be4-light-smart-r20.png)
+
+> Temps pour la création de l'image: 20706.6ms
+
+![be4-2lights-r5-1e9.png](./outputs/be4-2lights-r5-1e9.png)
+
+> Temps pour la création de l'image: 8310.03ms
+
+![be4-2lights-r5-1e8.png](./outputs/be4-2lights-r5-1e8.png)
+
+> Temps pour la création de l'image: 8540.31ms
+
+*__QUESTION__ : Avec intensity de la lumière a 1e8, les sphéres emissives sont __GRISES__... est-ce dû à la reflection partielle qui ne devrait pas être prise en compte sur une lampe? (voir exemple au dessus)*
+
+*__QUESTION__ : Quel paramètre prendre pour une diffraction correcte ? (essaie fait sans l'indirect lighting : explosion de point)*

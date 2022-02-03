@@ -14,6 +14,7 @@ class Environment
 private:
     std::vector<Sphere> spheres;
     std::vector<Vector> lights;
+    std::vector<int> sphere_lights;
 public:
     static const int BOUNCES_MAX = 5;
     static constexpr double N_AMBIANT = 1.;
@@ -26,6 +27,8 @@ public:
     bool intersect(const Ray&);
     bool intersect(const Ray&, Vector&, Vector&);
     bool intersect(const Ray&, Vector&, Vector&, int*);
+
+    int get_random_sphere_lights_index();
 
     void add_light(const Vector&);
     double get_intensity(const Vector&, const Vector&, const double&, const double&);

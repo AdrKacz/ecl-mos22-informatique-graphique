@@ -17,31 +17,24 @@ Sphere::Sphere(const Vector& a, double b, const Vector& c)
     albedo = c;
 }
 
-Sphere::Sphere(const Vector& a, double b, int type)
+Sphere::Sphere(const Vector& a, double b, int t)
 {
     O = a;
     R = b;
-    if (type == Sphere::TYPE_REFLECTIVE)
-    {
-        is_reflective = true;
-    } else if (type == Sphere::TYPE_TRANSPARENT) 
-    {
-        is_transparent = true;
-    }
-    
+    type = t;
 }
 
-Sphere::Sphere(const Vector& a, double b, int type, double c)
+Sphere::Sphere(const Vector& a, double b, int t, double c)
 {
     O = a;
     R = b;
-    if (type == Sphere::TYPE_REFLECTIVE)
+    type = t;
+    if (type == Sphere::TYPE_TRANSPARENT)
     {
-        is_reflective = true;
-    } else if (type == Sphere::TYPE_TRANSPARENT) 
-    {
-        is_transparent = true;
         n = c;
+    } else if (type == Sphere::TYPE_EMISSIVE)
+    {
+        intensity = c;
     }
 }
 

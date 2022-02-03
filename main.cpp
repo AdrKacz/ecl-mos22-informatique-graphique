@@ -12,14 +12,15 @@
 #include "src/Sphere/Sphere.h"
 #include "src/Environment/Environment.h"
 
-#define USE_BOX_MULLER false
-#define USE_INDIRECT_LIGHTING true
-#define DYNAMIC_MOVEMENT false // true to move with arrow key, false to generate one image
-#define INDIRECT_RAYS 32 // indirect rays number
+#define USE_BOX_MULLER true
+#define BOX_MULLER_SIGMA 0.5
+#define USE_INDIRECT_LIGHTING false
+#define DYNAMIC_MOVEMENT true // true to move with arrow key, false to generate one image
+#define INDIRECT_RAYS 1 // indirect rays number
 
 
 #define HALF_BOX_DIMENSION 50 // in world unit
-#define PIXELS_DIMENSION 256 // in pixels
+#define PIXELS_DIMENSION 512 // in pixels
 #define NB_THREAD_GRID 6 // grid n * n > NB_THREAD = NB_THREAD_GRID * NB_THREAD_GRID
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -36,14 +37,21 @@ double clamp(const double& v, const double& low, const double& high) {
     return std::max(std::min(v, high), low);
 }
 
-std::default_random_engine main_generator;
-std::uniform_real_distribution<float> main_distrib(0.0, 1.0);
+std::default_random_engine rng;
+std::uniform_real_distribution<double> r_unif(0.0, 1.0);
+constexpr double epsilon = std::numeric_limits<double>::epsilon();
+constexpr double two_pi = 2 * M_PI;
 Vector box_muller() {
-    float u = main_distrib(main_generator);
-    float v = main_distrib(main_generator);
+    double u, v;
+    do
+    {
+        u = r_unif(rng);
+    } while (u <= epsilon);
+    v = r_unif(rng);
 
-    float x = cos(2 * M_PI * u) * sqrt(-2 * log(v));
-    float y = sin(2 * M_PI * u) * sqrt(-2 * log(v));
+    double mag = BOX_MULLER_SIGMA * sqrt(-2.0 * log(u));
+    double x = mag * cos(2 * M_PI * v);
+    double y = mag * sin(2 * M_PI * v);
 
     return Vector(x, y, 0);
 }
@@ -52,28 +60,28 @@ Vector box_muller() {
 // ===== ===== ===== ===== Main
 // ===== ===== ===== =====
 
-void refresh(std::string filename, std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID], const int step, double z, Environment& E, const int W, const int H, Camera& C, double I, double I_pow_factor, std::vector<unsigned char>& image) {
+void refresh(std::string filename, std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID], const int step, Environment& E, const int W, const int H, Camera& C, double I, double I_pow_factor, std::vector<unsigned char>& image) {
     auto start = std::chrono::high_resolution_clock::now();
     for (int x = 0; x < NB_THREAD_GRID; x++)    
     {
         for (int y = 0; y < NB_THREAD_GRID; y++) {
             // uncomment to see black diagonal (thread not active)
             // if (x == y) { continue; }
-            threads[NB_THREAD_GRID * x + y] = std::thread([x, y, &step, &z, &E, &W, &H, &C, &I, &I_pow_factor, &image]()
+            threads[NB_THREAD_GRID * x + y] = std::thread([x, y, &step, &E, &W, &H, &C, &I, &I_pow_factor, &image]()
             {
                 for (int i = y * step; i < std::min(H, (y + 1) * step); i++) {
                     for (int j = x * step; j < std::min(W, (x + 1) * step); j++) {
                         Vector intensity = Vector();
                         // INDIRECT_RAYS rays at random
                         for (int k = 0; k < INDIRECT_RAYS; k++) {
-                            Vector u = Vector(j - W / 2 + 0.5, H - i - H / 2 + 0.5, z);
+                            Vector u = Vector(j - W / 2 + 0.5, H - i - H / 2 + 0.5, C.z);
                             if (USE_BOX_MULLER) {
                                 Vector random_box = box_muller();
                                 u[0] += random_box[0];
                                 u[1] += random_box[1];
                             }
                             u.normalize();
-                            Ray r = Ray(C.get_position(), C.look_from(u));
+                            Ray r = C.get_ray(u);
 
                             Vector P, N;
                             int sphere_index;
@@ -123,10 +131,11 @@ int main(int argc, char* argv[]) {
     }
     filename = "../outputs/" + filename;
 
-    Vector test_box = box_muller();
-    std::cout << test_box[0] << "\n";
-    std::cout << test_box[1] << "\n";
-    std::cout << test_box[2] << "\n";
+    // TODO: Random has always the same seed
+    // Vector test_box = box_muller();
+    // std::cout << test_box[0] << "\n";
+    // std::cout << test_box[1] << "\n";
+    // std::cout << test_box[2] << "\n";
 
     // Dimension
 	const int W = PIXELS_DIMENSION;
@@ -151,6 +160,8 @@ int main(int argc, char* argv[]) {
     E.add_sphere(Sphere(Vector(0, 0, + wall_size + HALF_BOX_DIMENSION), wall_size, Vector(0.8, 0.5, 0)));
 
     // Light
+    // E.add_sphere(Sphere(Vector(-30, 30, -30), 15, Sphere::TYPE_EMISSIVE, 1e8));
+    // E.add_sphere(Sphere(Vector(30, 30, -30), 15, Sphere::TYPE_EMISSIVE, 1e9));
     E.add_light(Vector(30, 30, 25));
     // E.add_light(Vector(-20, -20, -15));
 
@@ -158,9 +169,8 @@ int main(int argc, char* argv[]) {
     E.use_indirect_lighting = USE_INDIRECT_LIGHTING;
     
     // Camera
-    Camera C = Camera(Vector(0, 0, 40));
     double alpha = 90 * M_PI / 180;
-    double z = - PIXELS_DIMENSION / (2 * tan(alpha / 2));
+    Camera C = Camera(Vector(0, 0, 40), alpha, PIXELS_DIMENSION);
 	
 	std::vector<unsigned char> image(W*H * 3, 0);
 
@@ -171,7 +181,7 @@ int main(int argc, char* argv[]) {
     bool is_alive = true;
     char c = ' ';
     while (is_alive) {
-        refresh(filename, threads, step, z, E, W, H, C, I, I_pow_factor, image);
+        refresh(filename, threads, step, E, W, H, C, I, I_pow_factor, image);
         if (!DYNAMIC_MOVEMENT)
         {
             is_alive = false;

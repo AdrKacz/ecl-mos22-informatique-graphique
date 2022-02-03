@@ -1,5 +1,18 @@
 #include "Camera.h"
 
+// ===== ===== ===== =====
+// ===== ===== ===== ===== Helpers
+// ===== ===== ===== =====
+
+#include <random>
+
+std::default_random_engine rng_camera;
+std::uniform_real_distribution<double> r_unif_camera(0.0, 1.0);
+
+// ===== ===== ===== =====
+// ===== ===== ===== ===== Camera
+// ===== ===== ===== =====
+
 Camera::Camera()
 {
 }
@@ -9,10 +22,11 @@ Camera::Camera(const Vector& p)
     position = p;
 }
 
-Camera::Camera(const Vector& p, double a)
+Camera::Camera(const Vector& p, double a, double pixel_dim)
 {
     position = p;
-    angle = a;
+    alpha = a;
+    z = - pixel_dim / (2. * tan(alpha / 2.));
 }
 
 Camera::~Camera()
@@ -22,6 +36,19 @@ Camera::~Camera()
 const Vector Camera::get_position()
 {
     return position;
+}
+
+const Ray Camera::get_ray(const Vector& u)
+{
+    // TODO: Circular aperture, Ray r = Ray(C.get_position(), C.look_from(u));
+    double dx = (r_unif_camera(rng_camera) - .5) * 5.;
+    double dy = (r_unif_camera(rng_camera) - .5) * 5.;
+
+    Vector origin = position + Vector(dx, dy, 0.);
+    Vector point_to = position + look_from(u) * focus_distance - origin;
+    point_to.normalize();
+
+    return Ray(origin, point_to);
 }
 
 void Camera::move_forward(double d)

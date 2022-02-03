@@ -6,8 +6,41 @@
 
 #include <random>
 
+#include <iostream>
+#include <string>
+static void debug(const std::string& s) {
+    std::string sp = s + '\n';
+    std::cout << sp;
+}
+
 std::default_random_engine generator;
-std::uniform_real_distribution<float> distrib(0.0, 1.0);
+std::uniform_real_distribution<double> distrib(0.0, 1.0);
+
+static Vector random_cos(const Vector& N) {
+    double r1 = distrib(generator);
+    double r2 = distrib(generator);
+    double x = cos(2 * M_PI * r1) * sqrt(1 - r2);
+    double y = sin(2 * M_PI * r1) * sqrt(1 - r2);
+    double z = sqrt(r2);
+
+    Vector T1, T2;
+    if (N[0] < N[1] && N[0] < N[2]) // Nx smallest
+    {
+        T1 = Vector(0, -N[2], N[1]);
+    } else if (N[0] < N[1] && N[0] < N[2]) // Ny smallest
+    {
+        T1 = Vector(-N[2], 0, N[0]);
+    } else { // nz smallest
+        T1 = Vector(-N[1], N[0], 0);
+    }
+    T1.normalize();
+    T2 = T1.cross(N);  
+    T2.normalize();
+
+    Vector w_i = T1 * x + T2 * y + N * z;
+    w_i.normalize();
+    return w_i;
+}
 
 static double clamp(const double& v, const double& low, const double& high) {
     return std::max(std::min(v, high), low);
@@ -28,6 +61,9 @@ Environment::~Environment()
 void Environment::add_sphere(const Sphere& s)
 {
     spheres.push_back(s);
+    if (s.type == Sphere::TYPE_EMISSIVE) {
+        sphere_lights.push_back(spheres.size() - 1);
+    }
 }
 
 void Environment::add_light(const Vector& l) {
@@ -44,6 +80,12 @@ bool Environment::intersect(const Ray& r)
     }
     return false;
     
+}
+
+int Environment::get_random_sphere_lights_index()
+{
+    int index = rand() % sphere_lights.size();
+    return sphere_lights[index];
 }
 
 bool Environment::intersect(const Ray& r, Vector& P, Vector& N)
@@ -128,9 +170,8 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
     if (bounces >= Environment::BOUNCES_MAX) {
         return Vector();
     }
-    
     // Gather surface that receive light
-    if (spheres[sphere_index].is_reflective)
+    if (spheres[sphere_index].type == Sphere::TYPE_REFLECTIVE)
     {
         Vector r = bounce_i.u - N * N.dot(bounce_i.u) * 2;
         r.normalize();
@@ -141,7 +182,7 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
             return get_intensity(bounce_N, bounce_P, I, sphere_index, bounce_r, bounces + 1);
         }
         return Vector();
-    } else if (spheres[sphere_index].is_transparent)
+    } else if (spheres[sphere_index].type == Sphere::TYPE_TRANSPARENT)
     {
         double n_ratio;
         Vector local_N;
@@ -168,59 +209,79 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
         return Vector();
     }
 
+
     // Sphere is diffuse
     // Measure light from surface
-    double intensity = .0;
-
     // Direct lighting
+    double intensity = .0;
     for (int i = 0; i < lights.size(); i++)
     {
         Vector L = lights[i];
         Vector l = (L - P);
         l.normalize();
+        double l_dot_N = l.dot(N);
+        if (l_dot_N <= 0) {
+            continue;
+        }
         // Check if there is intersection between P and L
+        double distance_to_light = (L - P).norm2();
         Ray local_r = Ray(P + N * .01, l);
         Vector local_P, local_N;
         if (intersect(local_r, local_P, local_N)) {
             // Check if object closer than light
             double distance_to_object = (local_P - P).norm2();
-            double distance_to_light = (L - P).norm2();
             if (distance_to_object <= distance_to_light) {
                 continue;
             }
         }
-        double local_intensity = I * l.dot(N) / (4 * M_PI * M_PI * (L - P).norm2());
-        intensity += local_intensity;        
+
+        // TODO: Check formula (4*PI*PI or 4*PI)
+        double local_intensity = I * l_dot_N / (4 * M_PI * distance_to_light);
+        intensity += local_intensity;      
+    } 
+    Vector punctual_light_color = spheres[sphere_index].albedo * intensity;
+    if (!use_indirect_lighting) // if no indirect lighting, emissive sphere won't work (no ray to bouce up to them)
+    {
+        return punctual_light_color / M_PI;
     }
 
-    if (!use_indirect_lighting) 
-    {
-        return spheres[sphere_index].albedo * intensity / M_PI;
+    // Indirect lighting via emissive light (use trick to avoid noise)
+    Vector emissive_light_color;
+    if (sphere_lights.size() > 0) {
+        int random_sphere_light_index = get_random_sphere_lights_index();
+        if (random_sphere_light_index != sphere_index) { // Well, not useful if you're the light you want indirect lighting from...
+            // debug(std::string("Get Light from " + std::to_string(random_sphere_light_index) + " to " + std::to_string(sphere_index)));
+            Vector l = (P - spheres[random_sphere_light_index].O);
+            l.normalize();  
+            Vector w_random = random_cos(l);
+            Vector random_P_on_light = spheres[random_sphere_light_index].O + w_random * spheres[random_sphere_light_index].R;
+
+            Vector w_l = (random_P_on_light - P);
+            w_l.normalize();
+
+            double w_l_dot_N = w_l.dot(N);
+            if (w_l_dot_N > 0) { // Continue only if emissive sphere is more or less in front
+                double distance_to_light = (random_P_on_light - P).norm2(); 
+                Ray local_r = Ray(P + N * .01, w_l);
+                Vector local_P, local_N;
+                if (intersect(local_r, local_P, local_N)) { // Should ALWAYS intersect (at least with the emissive sphere)!
+                    double distance_to_object = (local_P - P).norm2();
+                    if (distance_to_object > distance_to_light * .99) { // .99 to avoid counting self-colliding
+                        // Add contribution from emissive light
+                        emissive_light_color = spheres[sphere_index].albedo * spheres[random_sphere_light_index].albedo \
+                            * spheres[random_sphere_light_index].intensity * w_l_dot_N * (w_random * -1.).dot(N) \
+                            / (4 * M_PI * distance_to_light * l.dot(w_random));
+                    }
+                } else {
+                    // Should never happen
+                    debug(std::string("[ERROR] Collided with nothing..."));
+                }
+            }
+        }
     }
 
-    // Indirect lighting
-    float r1 = distrib(generator);
-    float r2 = distrib(generator);
-    float x = cos(2 * M_PI * r1) * sqrt(1 - r2);
-    float y = sin(2 * M_PI * r1) * sqrt(1 - r2);
-    float z = sqrt(r2);
-
-    Vector T1, T2;
-    if (N[0] < N[1] && N[0] < N[2]) // Nx smallest
-    {
-        T1 = Vector(0, -N[2], N[1]);
-    } else if (N[0] < N[1] && N[0] < N[2]) // Ny smallest
-    {
-        T1 = Vector(-N[2], 0, N[0]);
-    } else { // nz smallest
-        T1 = Vector(-N[1], N[0], 0);
-    }
-    T1.normalize();
-    T2 = T1.cross(N);  
-    T2.normalize();
-
-    Vector w_i = T1 * x + T2 * y + N * z;
-    w_i.normalize();
+    // Indirect lighting via all the rest (including emissive light by chance)
+    Vector w_i = random_cos(N);
     Ray indirect_r = Ray(P + N * .01, w_i);
     Vector indirect_P, indirect_N;
     Vector indirect_intensity;
@@ -229,5 +290,12 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
         indirect_intensity = get_intensity(indirect_N, indirect_P, I, sphere_index_indirect, indirect_r, bounces + 1);
     }
 
-    return spheres[sphere_index].albedo * intensity / M_PI + spheres[sphere_index].albedo * indirect_intensity;
+    Vector color = (punctual_light_color + emissive_light_color) / M_PI + spheres[sphere_index].albedo * indirect_intensity;
+    if (spheres[sphere_index].type == Sphere::TYPE_EMISSIVE)
+    {
+        return spheres[sphere_index].albedo * spheres[sphere_index].intensity / (4 * M_PI * spheres[sphere_index].R * spheres[sphere_index].R) + color;
+    } else
+    {
+        return color;
+    }
 }
