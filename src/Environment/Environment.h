@@ -8,11 +8,12 @@
 #include "../Vector/Vector.h"
 #include "../Ray/Ray.h"
 #include "../Sphere/Sphere.h"
+#include "../Object/Object.h"
 
 class Environment
 {
 private:
-    std::vector<Sphere> spheres;
+    std::vector<Object*> objects;
     std::vector<Vector> lights;
     std::vector<int> sphere_lights;
 public:
@@ -23,7 +24,7 @@ public:
     Environment();
     ~Environment();
 
-    void add_sphere(const Sphere&);
+    void add_sphere(Sphere* s);
     bool intersect(const Ray&);
     bool intersect(const Ray&, Vector&, Vector&);
     bool intersect(const Ray&, Vector&, Vector&, int*);

@@ -22,4 +22,7 @@ add_executable(
   ${SRC_DIR}/Ray/Ray.cpp
   ${SRC_DIR}/Sphere/Sphere.cpp
   ${SRC_DIR}/Environment/Environment.cpp
+  ${SRC_DIR}/Mesh/TriangleIndices.cpp
+  ${SRC_DIR}/Mesh/TriangleMesh.cpp
+  ${SRC_DIR}/Object/Object.cpp
 )

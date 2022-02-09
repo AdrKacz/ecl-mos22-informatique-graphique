@@ -304,3 +304,6 @@ Anti-aliasing avec Box-Muller, `sigma = 0.5`, `32 rayons`.
 *__QUESTION__ : Avec intensity de la lumière a 1e8, les sphéres emissives sont __GRISES__... est-ce dû à la reflection partielle qui ne devrait pas être prise en compte sur une lampe? (voir exemple au dessus)*
 
 *__QUESTION__ : Quel paramètre prendre pour une diffraction correcte ? (essaie fait sans l'indirect lighting : explosion de point)*
+
+
+# BE 5 - Maillage

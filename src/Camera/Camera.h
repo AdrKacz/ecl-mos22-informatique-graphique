@@ -13,6 +13,7 @@ public:
     Camera();
     Camera(const Vector&);
     Camera(const Vector&, double, double);
+    Camera(const Vector&, double, double, double);
 
     double focus_distance = 40.;
     double alpha = 0.;

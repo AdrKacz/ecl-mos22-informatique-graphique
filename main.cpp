@@ -10,13 +10,16 @@
 #include "src/Vector/Vector.h"
 #include "src/Ray/Ray.h"
 #include "src/Sphere/Sphere.h"
+#include "src/Object/Object.h"
 #include "src/Environment/Environment.h"
 
+#define USE_FOCAL_DISTANCE true
+#define FOCAL_DISTANCE 30
 #define USE_BOX_MULLER true
 #define BOX_MULLER_SIGMA 0.5
 #define USE_INDIRECT_LIGHTING false
-#define DYNAMIC_MOVEMENT true // true to move with arrow key, false to generate one image
-#define INDIRECT_RAYS 1 // indirect rays number
+#define DYNAMIC_MOVEMENT false // true to move with arrow key, false to generate one image
+#define INDIRECT_RAYS 20 // indirect rays number
 
 
 #define HALF_BOX_DIMENSION 50 // in world unit
@@ -81,8 +84,13 @@ void refresh(std::string filename, std::thread threads[NB_THREAD_GRID * NB_THREA
                                 u[1] += random_box[1];
                             }
                             u.normalize();
-                            Ray r = C.get_ray(u);
 
+                            Ray r;
+                            if (USE_FOCAL_DISTANCE) {
+                                r = C.get_ray(u);
+                            } else {
+                                r = Ray(C.get_position(), C.look_from(u));
+                            }
                             Vector P, N;
                             int sphere_index;
                             if (E.intersect(r, P, N, &sphere_index))
@@ -146,18 +154,18 @@ int main(int argc, char* argv[]) {
     std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID];
 
     Environment E = Environment();
-    E.add_sphere(Sphere(Vector(0, 0, 0), 10, Vector(1, 0, 0.5)));
-    E.add_sphere(Sphere(Vector(20, 0, 0), 5, Sphere::TYPE_REFLECTIVE));
-    E.add_sphere(Sphere(Vector(5, 0, 20), 3, Sphere::TYPE_TRANSPARENT, 1.5));
+    E.add_sphere(new Sphere(Vector(0, 0, 0), 10, Vector(1, 0, 0.5)));
+    E.add_sphere(new Sphere(Vector(20, 0, 0), 5, Sphere::TYPE_REFLECTIVE));
+    E.add_sphere(new Sphere(Vector(5, 0, 20), 3, Sphere::TYPE_TRANSPARENT, 1.5));
 
     // Box
     const double wall_size = HALF_BOX_DIMENSION * 1e3;
-    E.add_sphere(Sphere(Vector(- wall_size - HALF_BOX_DIMENSION, 0, 0), wall_size));
-    E.add_sphere(Sphere(Vector(+ wall_size + HALF_BOX_DIMENSION, 0, 0), wall_size));
-    E.add_sphere(Sphere(Vector(0, - wall_size - HALF_BOX_DIMENSION, 0), wall_size));
-    E.add_sphere(Sphere(Vector(0, + wall_size + HALF_BOX_DIMENSION, 0), wall_size));
-    E.add_sphere(Sphere(Vector(0, 0, - wall_size - HALF_BOX_DIMENSION), wall_size));
-    E.add_sphere(Sphere(Vector(0, 0, + wall_size + HALF_BOX_DIMENSION), wall_size, Vector(0.8, 0.5, 0)));
+    E.add_sphere(new Sphere(Vector(- wall_size - HALF_BOX_DIMENSION, 0, 0), wall_size));
+    E.add_sphere(new Sphere(Vector(+ wall_size + HALF_BOX_DIMENSION, 0, 0), wall_size));
+    E.add_sphere(new Sphere(Vector(0, - wall_size - HALF_BOX_DIMENSION, 0), wall_size));
+    E.add_sphere(new Sphere(Vector(0, + wall_size + HALF_BOX_DIMENSION, 0), wall_size));
+    E.add_sphere(new Sphere(Vector(0, 0, - wall_size - HALF_BOX_DIMENSION), wall_size));
+    E.add_sphere(new Sphere(Vector(0, 0, + wall_size + HALF_BOX_DIMENSION), wall_size, Vector(0.8, 0.5, 0)));
 
     // Light
     // E.add_sphere(Sphere(Vector(-30, 30, -30), 15, Sphere::TYPE_EMISSIVE, 1e8));
@@ -170,7 +178,7 @@ int main(int argc, char* argv[]) {
     
     // Camera
     double alpha = 90 * M_PI / 180;
-    Camera C = Camera(Vector(0, 0, 40), alpha, PIXELS_DIMENSION);
+    Camera C = Camera(Vector(0, 0, 40), alpha, PIXELS_DIMENSION, FOCAL_DISTANCE);
 	
 	std::vector<unsigned char> image(W*H * 3, 0);
 

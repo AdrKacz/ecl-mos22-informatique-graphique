@@ -8,6 +8,7 @@ class Ray
 private:
 public:
     Vector C, u;
+    Ray();
     Ray(const Vector&, const Vector&);
     ~Ray();
 };

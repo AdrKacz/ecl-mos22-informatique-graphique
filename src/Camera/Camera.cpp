@@ -29,6 +29,14 @@ Camera::Camera(const Vector& p, double a, double pixel_dim)
     z = - pixel_dim / (2. * tan(alpha / 2.));
 }
 
+Camera::Camera(const Vector& p, double a, double pixel_dim, double focal)
+{
+    position = p;
+    alpha = a;
+    z = - pixel_dim / (2. * tan(alpha / 2.));
+    focus_distance = focal;
+}
+
 Camera::~Camera()
 {
 }
