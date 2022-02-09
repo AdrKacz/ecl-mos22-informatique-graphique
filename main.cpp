@@ -10,20 +10,23 @@
 #include "src/Vector/Vector.h"
 #include "src/Ray/Ray.h"
 #include "src/Sphere/Sphere.h"
+#include "src/Mesh/TriangleMesh.h"
 #include "src/Object/Object.h"
 #include "src/Environment/Environment.h"
 
-#define USE_FOCAL_DISTANCE true
-#define FOCAL_DISTANCE 30
+
+#define MESH_PATH "../meshes/triangle.obj"
+#define USE_FOCAL_DISTANCE false
+#define FOCAL_DISTANCE 40
 #define USE_BOX_MULLER true
 #define BOX_MULLER_SIGMA 0.5
 #define USE_INDIRECT_LIGHTING false
 #define DYNAMIC_MOVEMENT false // true to move with arrow key, false to generate one image
-#define INDIRECT_RAYS 20 // indirect rays number
+#define INDIRECT_RAYS 5 // indirect rays number
 
 
 #define HALF_BOX_DIMENSION 50 // in world unit
-#define PIXELS_DIMENSION 512 // in pixels
+#define PIXELS_DIMENSION 256 // in pixels
 #define NB_THREAD_GRID 6 // grid n * n > NB_THREAD = NB_THREAD_GRID * NB_THREAD_GRID
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -92,10 +95,10 @@ void refresh(std::string filename, std::thread threads[NB_THREAD_GRID * NB_THREA
                                 r = Ray(C.get_position(), C.look_from(u));
                             }
                             Vector P, N;
-                            int sphere_index;
-                            if (E.intersect(r, P, N, &sphere_index))
+                            int object_index;
+                            if (E.intersect(r, P, N, &object_index))
                             {
-                                intensity = intensity + E.get_intensity(N, P, I, sphere_index, r, 0);
+                                intensity = intensity + E.get_intensity(N, P, I, object_index, r, 0);
                             }
                         }
                         intensity = intensity / INDIRECT_RAYS * 1.0;
@@ -154,21 +157,27 @@ int main(int argc, char* argv[]) {
     std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID];
 
     Environment E = Environment();
-    E.add_sphere(new Sphere(Vector(0, 0, 0), 10, Vector(1, 0, 0.5)));
-    E.add_sphere(new Sphere(Vector(20, 0, 0), 5, Sphere::TYPE_REFLECTIVE));
-    E.add_sphere(new Sphere(Vector(5, 0, 20), 3, Sphere::TYPE_TRANSPARENT, 1.5));
+
+    // Objects
+    TriangleMesh mesh = TriangleMesh();
+    mesh.readOBJ(MESH_PATH);
+    E.add_mesh(&mesh);
+    // E.add_sphere(new Sphere(Vector(5, 10, 0), 2, Vector(1, 0, 0.5)));
+    // E.add_sphere(new Sphere(Vector(0, 0, 0), 10, Vector(1, 0, 0.5)));
+    // E.add_sphere(new Sphere(Vector(20, 0, 0), 5, Sphere::TYPE_REFLECTIVE));
+    // E.add_sphere(new Sphere(Vector(5, 0, 20), 3, Sphere::TYPE_TRANSPARENT, 1.5));
 
     // Box
     const double wall_size = HALF_BOX_DIMENSION * 1e3;
-    E.add_sphere(new Sphere(Vector(- wall_size - HALF_BOX_DIMENSION, 0, 0), wall_size));
-    E.add_sphere(new Sphere(Vector(+ wall_size + HALF_BOX_DIMENSION, 0, 0), wall_size));
-    E.add_sphere(new Sphere(Vector(0, - wall_size - HALF_BOX_DIMENSION, 0), wall_size));
-    E.add_sphere(new Sphere(Vector(0, + wall_size + HALF_BOX_DIMENSION, 0), wall_size));
-    E.add_sphere(new Sphere(Vector(0, 0, - wall_size - HALF_BOX_DIMENSION), wall_size));
-    E.add_sphere(new Sphere(Vector(0, 0, + wall_size + HALF_BOX_DIMENSION), wall_size, Vector(0.8, 0.5, 0)));
+    E.add_sphere(new Sphere(Vector(- wall_size - HALF_BOX_DIMENSION, 0, 0), wall_size)); // left
+    E.add_sphere(new Sphere(Vector(+ wall_size + HALF_BOX_DIMENSION, 0, 0), wall_size)); // right
+    E.add_sphere(new Sphere(Vector(0, - wall_size - HALF_BOX_DIMENSION, 0), wall_size)); // bottom
+    E.add_sphere(new Sphere(Vector(0, + wall_size + HALF_BOX_DIMENSION, 0), wall_size)); // top
+    E.add_sphere(new Sphere(Vector(0, 0, - wall_size - HALF_BOX_DIMENSION), wall_size)); // forward
+    E.add_sphere(new Sphere(Vector(0, 0, + wall_size + HALF_BOX_DIMENSION), wall_size, Vector(0.8, 0.5, 0))); // backwards
 
     // Light
-    // E.add_sphere(Sphere(Vector(-30, 30, -30), 15, Sphere::TYPE_EMISSIVE, 1e8));
+    // E.add_sphere(new Sphere(Vector(-30, 30, -30), 15, Sphere::TYPE_EMISSIVE, 1e9));
     // E.add_sphere(Sphere(Vector(30, 30, -30), 15, Sphere::TYPE_EMISSIVE, 1e9));
     E.add_light(Vector(30, 30, 25));
     // E.add_light(Vector(-20, -20, -15));

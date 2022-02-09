@@ -36,3 +36,6 @@ build/
 
 # VSCode - not working (???)
 .vscode/
+
+# Meshes
+!meshes/*.obj

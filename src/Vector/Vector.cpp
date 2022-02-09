@@ -70,3 +70,7 @@ void Vector::normalize() {
     vec[1] /= n;
     vec[2] /= n;
 }
+
+std::string Vector::to_string() {
+    return std::string("(" + std::to_string(vec[0]) + ", " + std::to_string(vec[1]) + ", " + std::to_string(vec[2]) + ")");
+}

@@ -66,6 +66,11 @@ void Environment::add_sphere(Sphere* s)
     }
 }
 
+void Environment::add_mesh(TriangleMesh* m)
+{
+    objects.push_back(m);
+}
+
 void Environment::add_light(const Vector& l) {
     lights.push_back(l);
 }
@@ -223,6 +228,7 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
         if (l_dot_N <= 0) {
             continue;
         }
+        
         // Check if there is intersection between P and L
         double distance_to_light = (L - P).norm2();
         Ray local_r = Ray(P + N * .01, l);
@@ -231,14 +237,19 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
             // Check if object closer than light
             double distance_to_object = (local_P - P).norm2();
             if (distance_to_object <= distance_to_light) {
+            //     if (object_index == 0 && intensity == 0) {
+            //      debug(std::string("Shadow at :\t" + std::to_string(object_index)));
+            //  } 
                 continue;
             }
         }
-
         // TODO: Check formula (4*PI*PI or 4*PI)
         double local_intensity = I * l_dot_N / (4 * M_PI * distance_to_light);
-        intensity += local_intensity;      
+        intensity += local_intensity;     
     } 
+    // if (object_index == 0 && intensity == 0) {
+    //         debug(std::string("\tShadow on :\t" + std::to_string(object_index)));
+    // } 
     Vector punctual_light_color = objects[object_index]->albedo * intensity;
     if (!use_indirect_lighting) // if no indirect lighting, emissive sphere won't work (no ray to bouce up to them)
     {

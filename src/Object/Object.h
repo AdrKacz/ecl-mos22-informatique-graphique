@@ -1,13 +1,14 @@
 #ifndef DEF_OBJECT
 #define DEF_OBJECT
 
+#include "../Vector/Vector.h"
 #include "../Ray/Ray.h"
 
 class Object
 {
 public:
     int type = 0.; // default to diffuse
-    
+
     Vector albedo = Vector(1., 1., 1.); // diffuse and emissive
     double n = 1.; // transparent
     double intensity = 1.; // emissive

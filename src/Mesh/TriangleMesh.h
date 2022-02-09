@@ -8,14 +8,29 @@
 #include <vector>
 
 #include "TriangleIndices.h"
+#include "../Ray/Ray.h"
 #include "../Vector/Vector.h"
+#include "../Object/Object.h"
 
-class TriangleMesh {
+class TriangleMesh : public Object
+{
 public:
-	~TriangleMesh();
 	TriangleMesh();
+	~TriangleMesh();
+
+	// Bounding box
+	Vector m, M;
+
+	// void computer_bounding_box();
 	
-	bool intersect_with_triangle(const TriangleIndices&, const Vector&, const Vector&);
+	bool intersect_with_triangle(const TriangleIndices&, const Ray&);
+	bool intersect_with_triangle(const TriangleIndices&, const Ray&, Vector&, Vector&, double&);
+
+	virtual bool intersect(const Ray&);
+    virtual bool intersect(const Ray&, Vector&, Vector&);
+    virtual bool intersect(const Ray&, Vector&, Vector&, double&);
+
+
 	void readOBJ(const char* obj);
 
 	std::vector<TriangleIndices> indices;

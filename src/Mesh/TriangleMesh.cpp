@@ -1,6 +1,7 @@
 #include "TriangleMesh.h"
 
-
+#include <iostream>
+#include <string>
 
 TriangleMesh::TriangleMesh() 
 {
@@ -10,7 +11,25 @@ TriangleMesh::~TriangleMesh()
 {
 }
 
-bool TriangleMesh::intersect_with_triangle(const TriangleIndices& triangle, const Vector& camera_origin, const Vector& u)
+// void TriangleMesh::computer_bounding_box()
+// // {
+// // 	double x1, x2;
+// // 	double y1, y2;
+// // 	for (int i = 0; i < vertices.size(); i++)
+// // 	{
+// // 		bx1 = std::min(tx1, vertices[i][0]) 
+// // 	}
+// }
+
+bool TriangleMesh::intersect_with_triangle(const TriangleIndices& triangle, const Ray& ray)
+{
+	double t;
+	Vector p, n;
+	return intersect_with_triangle(triangle, ray, p, n, t);
+
+}
+
+bool TriangleMesh::intersect_with_triangle(const TriangleIndices& triangle, const Ray& ray, Vector& P, Vector& N, double& t)
 {
 	Vector vertice_i = vertices[triangle.vtxi];
 	Vector vertice_j = vertices[triangle.vtxj];
@@ -19,22 +38,62 @@ bool TriangleMesh::intersect_with_triangle(const TriangleIndices& triangle, cons
 	Vector e_1 = vertice_j - vertice_i;
 	Vector e_2 = vertice_k - vertice_i;
 
-	Vector N = e_1.cross(e_2);
+	N = e_1.cross(e_2);
 
-	Vector i_to_origin = (camera_origin - vertice_i);
-	Vector i_to_origin_cross_u = i_to_origin.cross(u);
-	double u_dot_n = u.dot(N);
+	Vector i_to_origin = (ray.C - vertice_i);
+	Vector i_to_origin_cross_u = i_to_origin.cross(ray.u);
+	double u_dot_n = ray.u.dot(N);
 
 	double beta  = - e_2.dot(i_to_origin_cross_u) / u_dot_n;
 	double gamma  = + e_1.dot(i_to_origin_cross_u) / u_dot_n;
 	double alpha = 1. - beta - gamma;
-
-	if (!(0 >= alpha && alpha >= 1 && 0 >= beta && beta >= 1 && 0 >= gamma && gamma >= 1)) {
+	t = - i_to_origin.dot(N) / u_dot_n;
+	if (!(0 <= alpha && alpha <= 1 && 0 <= beta && beta <= 1 && 0 <= gamma && gamma <= 1 && t >= 0)) {
 		return false;
 	}
-	double t = - i_to_origin.dot(N) / u_dot_n;
+	P = vertice_i + e_1 * beta + e_2 * gamma;
+	N.normalize();
 	return true;
+}
 
+bool TriangleMesh::intersect(const Ray& r)
+{
+	for (int i = 0; i < indices.size(); i++)
+	{
+		if (intersect_with_triangle(indices[i], r))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool TriangleMesh::intersect(const Ray& r, Vector& P, Vector& N)
+{
+    double T;
+    return intersect(r, P, N, T);
+}
+
+bool TriangleMesh::intersect(const Ray& r, Vector& P, Vector& N, double& T)
+{
+    bool has_intersected = false;
+    T = std::numeric_limits<double>::max();
+    for (int i = 0; i < indices.size(); i++)
+    {
+		double t;
+		Vector p, n;
+		if (intersect_with_triangle(indices[i], r, p, n, t))
+		{
+			has_intersected = true;
+			if (t < T) {
+				T = t;
+				P = p;
+				N = n * -1.;
+			}
+		}
+    }
+
+    return has_intersected; 
 }
 
 void TriangleMesh::readOBJ(const char* obj) {

@@ -2,6 +2,7 @@
 #define DEF_VECTOR
 
 #include <cmath>
+#include <string>
 
 class Vector
 {
@@ -27,6 +28,8 @@ public:
     double norm2() const;
     double norm() const;
     void normalize();
+
+    std::string to_string();
 };
 
 #endif

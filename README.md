@@ -307,3 +307,7 @@ Anti-aliasing avec Box-Muller, `sigma = 0.5`, `32 rayons`.
 
 
 # BE 5 - Maillage
+
+![be5-one-triangle.png](./outputs/be5-one-triangle.png)
+
+> Temps pour la création de l'image: 159.27ms

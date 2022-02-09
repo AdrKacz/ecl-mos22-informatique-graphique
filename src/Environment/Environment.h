@@ -8,6 +8,7 @@
 #include "../Vector/Vector.h"
 #include "../Ray/Ray.h"
 #include "../Sphere/Sphere.h"
+#include "../Mesh/TriangleMesh.h"
 #include "../Object/Object.h"
 
 class Environment
@@ -25,6 +26,7 @@ public:
     ~Environment();
 
     void add_sphere(Sphere* s);
+    void add_mesh(TriangleMesh* m);
     bool intersect(const Ray&);
     bool intersect(const Ray&, Vector&, Vector&);
     bool intersect(const Ray&, Vector&, Vector&, int*);
