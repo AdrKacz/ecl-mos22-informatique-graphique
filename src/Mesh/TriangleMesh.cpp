@@ -56,6 +56,37 @@ bool TriangleMesh::intersect_with_triangle(const TriangleIndices& triangle, cons
 	return true;
 }
 
+bool TriangleMesh::intersect_with_bounding_box(const Ray& r)
+{
+	double tx_alpha = (m[0] - r.C[0]) / r.u[0];
+	double tx_beta = (M[0] - r.C[0]) / r.u[0];
+	double tx1 = std::min(tx_alpha, tx_beta);
+	double tx2 = std::max(tx_alpha, tx_beta);
+
+	double ty_alpha = (m[1] - r.C[1]) / r.u[1];
+	double ty_beta = (M[1] - r.C[1]) / r.u[1];
+	double ty1 = std::min(ty_alpha, ty_beta);
+	double ty2 = std::max(ty_alpha, ty_beta);
+
+	double tz_alpha = (m[2] - r.C[2]) / r.u[2];
+	double tz_beta = (M[2] - r.C[2]) / r.u[2];
+	double tz1 = std::min(tz_alpha, tz_beta);
+	double tz2 = std::max(tz_alpha, tz_beta);
+
+	double tmin_max = std::min(tx2, std::min(ty2, tz2));
+	if (tmin_max < 0)
+	{
+		return false;
+	}
+
+	double tmax_min = std::max(tx1, std::max(ty1, tz1));
+	if (tmax_min >= tmin_max)
+	{
+		return true;
+	}
+	return false;
+}
+
 bool TriangleMesh::intersect(const Ray& r)
 {
 	for (int i = 0; i < indices.size(); i++)
@@ -76,6 +107,9 @@ bool TriangleMesh::intersect(const Ray& r, Vector& P, Vector& N)
 
 bool TriangleMesh::intersect(const Ray& r, Vector& P, Vector& N, double& T)
 {
+	if (!intersect_with_bounding_box(r)) {
+		return false;
+	}
     bool has_intersected = false;
     T = std::numeric_limits<double>::max();
     for (int i = 0; i < indices.size(); i++)
@@ -94,6 +128,26 @@ bool TriangleMesh::intersect(const Ray& r, Vector& P, Vector& N, double& T)
     }
 
     return has_intersected; 
+}
+
+void TriangleMesh::init_bounding_box() {
+	double double_min = std::numeric_limits<double>::min();
+	double double_max = std::numeric_limits<double>::max();
+
+	m = Vector(double_max, double_max, double_max);
+	M = Vector(double_min, double_min, double_min);
+
+	for (unsigned int i = 0; i < vertices.size(); i++)
+	{
+		m[0] = std::min(m[0], vertices[i][0]);
+		m[1] = std::min(m[1], vertices[i][1]);
+		m[2] = std::min(m[2], vertices[i][2]);
+
+		M[0] = std::max(M[0], vertices[i][0]);
+		M[1] = std::max(M[1], vertices[i][1]);
+		M[2] = std::max(M[2], vertices[i][2]);
+	}
+	
 }
 
 void TriangleMesh::readOBJ(const char* obj) {

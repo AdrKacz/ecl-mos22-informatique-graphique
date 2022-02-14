@@ -25,13 +25,14 @@ public:
 	
 	bool intersect_with_triangle(const TriangleIndices&, const Ray&);
 	bool intersect_with_triangle(const TriangleIndices&, const Ray&, Vector&, Vector&, double&);
+	bool intersect_with_bounding_box(const Ray&);
 
 	virtual bool intersect(const Ray&);
     virtual bool intersect(const Ray&, Vector&, Vector&);
     virtual bool intersect(const Ray&, Vector&, Vector&, double&);
 
-
 	void readOBJ(const char* obj);
+	void init_bounding_box();
 
 	std::vector<TriangleIndices> indices;
 	std::vector<Vector> vertices;
