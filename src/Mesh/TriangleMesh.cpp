@@ -3,6 +3,20 @@
 #include <iostream>
 #include <string>
 
+BoundingBox::BoundingBox()
+{
+}
+
+BoundingBox::BoundingBox(const Vector& p_m, const Vector& p_M)
+{
+	m = p_m;
+	M = p_M;
+}
+
+BoundingBox::~BoundingBox()
+{
+}
+
 TriangleMesh::TriangleMesh() 
 {
 }
@@ -10,16 +24,6 @@ TriangleMesh::TriangleMesh()
 TriangleMesh::~TriangleMesh()
 {
 }
-
-// void TriangleMesh::computer_bounding_box()
-// // {
-// // 	double x1, x2;
-// // 	double y1, y2;
-// // 	for (int i = 0; i < vertices.size(); i++)
-// // 	{
-// // 		bx1 = std::min(tx1, vertices[i][0]) 
-// // 	}
-// }
 
 bool TriangleMesh::intersect_with_triangle(const TriangleIndices& triangle, const Ray& ray)
 {
@@ -58,29 +62,33 @@ bool TriangleMesh::intersect_with_triangle(const TriangleIndices& triangle, cons
 
 bool TriangleMesh::intersect_with_bounding_box(const Ray& r)
 {
-	double tx_alpha = (m[0] - r.C[0]) / r.u[0];
-	double tx_beta = (M[0] - r.C[0]) / r.u[0];
+	// std::string outputm = std::string("m> " + box.m.to_string() + "\n");
+	// std::string outputM = std::string("M> " + box.M.to_string() + "\n--- --- ---\n");
+	// std::cout << std::string(outputm + outputM);
+
+	double tx_alpha = (box.m[0] - r.C[0]) / r.u[0];
+	double tx_beta = (box.M[0] - r.C[0]) / r.u[0];
 	double tx1 = std::min(tx_alpha, tx_beta);
 	double tx2 = std::max(tx_alpha, tx_beta);
 
-	double ty_alpha = (m[1] - r.C[1]) / r.u[1];
-	double ty_beta = (M[1] - r.C[1]) / r.u[1];
+	double ty_alpha = (box.m[1] - r.C[1]) / r.u[1];
+	double ty_beta = (box.M[1] - r.C[1]) / r.u[1];
 	double ty1 = std::min(ty_alpha, ty_beta);
 	double ty2 = std::max(ty_alpha, ty_beta);
 
-	double tz_alpha = (m[2] - r.C[2]) / r.u[2];
-	double tz_beta = (M[2] - r.C[2]) / r.u[2];
+	double tz_alpha = (box.m[2] - r.C[2]) / r.u[2];
+	double tz_beta = (box.M[2] - r.C[2]) / r.u[2];
 	double tz1 = std::min(tz_alpha, tz_beta);
 	double tz2 = std::max(tz_alpha, tz_beta);
 
-	double tmin_max = std::min(tx2, std::min(ty2, tz2));
-	if (tmin_max < 0)
+	double tmax_min = std::max(tx1, std::max(ty1, tz1));
+	if (tmax_min < 0)
 	{
 		return false;
 	}
 
-	double tmax_min = std::max(tx1, std::max(ty1, tz1));
-	if (tmax_min >= tmin_max)
+	double tmin_max = std::min(tx2, std::min(ty2, tz2));
+	if (tmax_min <= tmin_max)
 	{
 		return true;
 	}
@@ -122,7 +130,7 @@ bool TriangleMesh::intersect(const Ray& r, Vector& P, Vector& N, double& T)
 			if (t < T) {
 				T = t;
 				P = p;
-				N = n * -1.;
+				N = n * +1.;
 			}
 		}
     }
@@ -131,13 +139,17 @@ bool TriangleMesh::intersect(const Ray& r, Vector& P, Vector& N, double& T)
 }
 
 void TriangleMesh::init_bounding_box() {
+	box = create_bounding_box(0, vertices.size());
+}
+
+BoundingBox TriangleMesh::create_bounding_box(int from_index, int to_index) {
 	double double_min = std::numeric_limits<double>::min();
 	double double_max = std::numeric_limits<double>::max();
 
-	m = Vector(double_max, double_max, double_max);
-	M = Vector(double_min, double_min, double_min);
+	Vector m = Vector(double_max, double_max, double_max);
+	Vector M = Vector(double_min, double_min, double_min);
 
-	for (unsigned int i = 0; i < vertices.size(); i++)
+	for (unsigned int i = from_index; i < to_index; i++)
 	{
 		m[0] = std::min(m[0], vertices[i][0]);
 		m[1] = std::min(m[1], vertices[i][1]);
@@ -147,7 +159,8 @@ void TriangleMesh::init_bounding_box() {
 		M[1] = std::max(M[1], vertices[i][1]);
 		M[2] = std::max(M[2], vertices[i][2]);
 	}
-	
+
+	return BoundingBox(m, M);
 }
 
 void TriangleMesh::readOBJ(const char* obj) {

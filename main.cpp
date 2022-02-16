@@ -15,18 +15,18 @@
 #include "src/Environment/Environment.h"
 
 
-#define MESH_PATH "../meshes/triangle.obj"
+#define MESH_PATH "../meshes/dog.obj"
 #define USE_FOCAL_DISTANCE false
 #define FOCAL_DISTANCE 40
 #define USE_BOX_MULLER true
 #define BOX_MULLER_SIGMA 0.5
 #define USE_INDIRECT_LIGHTING false
 #define DYNAMIC_MOVEMENT false // true to move with arrow key, false to generate one image
-#define INDIRECT_RAYS 5 // indirect rays number
+#define INDIRECT_RAYS 1 // indirect rays number
 
 
 #define HALF_BOX_DIMENSION 50 // in world unit
-#define PIXELS_DIMENSION 256 // in pixels
+#define PIXELS_DIMENSION 128 // in pixels
 #define NB_THREAD_GRID 6 // grid n * n > NB_THREAD = NB_THREAD_GRID * NB_THREAD_GRID
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -159,8 +159,12 @@ int main(int argc, char* argv[]) {
     Environment E = Environment();
 
     // Objects
+    std::cout << "Create mesh..." << std::endl;
     TriangleMesh mesh = TriangleMesh();
+    std::cout << "Start reading mesh..." << std::endl;
     mesh.readOBJ(MESH_PATH);
+    std::cout << "Create bounding box..." << std::endl;
+    mesh.init_bounding_box();
     E.add_mesh(&mesh);
     // E.add_sphere(new Sphere(Vector(5, 10, 0), 2, Vector(1, 0, 0.5)));
     // E.add_sphere(new Sphere(Vector(0, 0, 0), 10, Vector(1, 0, 0.5)));
@@ -197,6 +201,8 @@ int main(int argc, char* argv[]) {
     std::string mvt_sequence = "";
     bool is_alive = true;
     char c = ' ';
+
+    std::cout << "Start refreshing screen..." << std::endl;
     while (is_alive) {
         refresh(filename, threads, step, E, W, H, C, I, I_pow_factor, image);
         if (!DYNAMIC_MOVEMENT)

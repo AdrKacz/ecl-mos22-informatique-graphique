@@ -12,16 +12,22 @@
 #include "../Vector/Vector.h"
 #include "../Object/Object.h"
 
+class BoundingBox
+{
+public:
+	Vector m, M;
+	BoundingBox();
+	BoundingBox(const Vector&, const Vector&);
+	~BoundingBox();
+};
+
 class TriangleMesh : public Object
 {
 public:
 	TriangleMesh();
 	~TriangleMesh();
 
-	// Bounding box
-	Vector m, M;
-
-	// void computer_bounding_box();
+	BoundingBox box;
 	
 	bool intersect_with_triangle(const TriangleIndices&, const Ray&);
 	bool intersect_with_triangle(const TriangleIndices&, const Ray&, Vector&, Vector&, double&);
@@ -33,6 +39,7 @@ public:
 
 	void readOBJ(const char* obj);
 	void init_bounding_box();
+	BoundingBox create_bounding_box(int, int);
 
 	std::vector<TriangleIndices> indices;
 	std::vector<Vector> vertices;
