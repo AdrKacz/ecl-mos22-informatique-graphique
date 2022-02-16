@@ -3,6 +3,25 @@
 #include <iostream>
 #include <string>
 
+// ===== ===== ===== =====
+// ===== ===== ===== ===== Helpers
+// ===== ===== ===== =====
+
+unsigned int argmax(double a, double b, double c)
+{
+	if (a > b && a > c) {
+		return 0;
+	} else  if (b > a && b > c) {
+		return 1;
+	} else {
+		return 2;
+	}
+}
+
+// ===== ===== ===== =====
+// ===== ===== ===== ===== BoundingBox
+// ===== ===== ===== =====
+
 BoundingBox::BoundingBox()
 {
 }
@@ -16,6 +35,22 @@ BoundingBox::BoundingBox(const Vector& p_m, const Vector& p_M)
 BoundingBox::~BoundingBox()
 {
 }
+
+// ===== ===== ===== =====
+// ===== ===== ===== ===== Node
+// ===== ===== ===== =====
+
+Node::Node()
+{
+}
+
+Node::~Node()
+{
+}
+
+// ===== ===== ===== =====
+// ===== ===== ===== ===== TriangleMesh
+// ===== ===== ===== =====
 
 TriangleMesh::TriangleMesh() 
 {
@@ -139,7 +174,50 @@ bool TriangleMesh::intersect(const Ray& r, Vector& P, Vector& N, double& T)
 }
 
 void TriangleMesh::init_bounding_box() {
-	box = create_bounding_box(0, vertices.size());
+	box = create_bounding_box(0, indices.size());
+	build_bounding_volume_hierarchy(&root_box, 0, indices.size());
+}
+
+void TriangleMesh::build_bounding_volume_hierarchy(Node* n, unsigned int from_triangle_i, unsigned int to_triangle_i)
+{
+	std::cout << "Build from " << from_triangle_i << " to " << to_triangle_i << std::endl;
+	n->box = create_bounding_box(from_triangle_i, to_triangle_i);
+	n->i1 = from_triangle_i;
+	n->i2 = to_triangle_i;
+
+	Vector diagonal = n->box.M - n->box.m;
+
+	unsigned int axe_diagonal = argmax(diagonal[0], diagonal[1], diagonal[2]);
+
+	double middle = n->box.m[axe_diagonal] + diagonal[axe_diagonal] / 2;
+
+	unsigned int pivot = from_triangle_i;
+	for (unsigned int i = from_triangle_i ; i < to_triangle_i ; i++)
+	{
+		if (center_of_triangle(i, axe_diagonal) < middle)
+		{
+			std::swap(indices[i], indices[pivot]);
+			pivot++;
+		}
+	}
+
+	if (to_triangle_i - from_triangle_i > 5 && pivot != from_triangle_i && pivot != to_triangle_i)
+	{
+		n->left = new Node();
+		n->right = new Node();
+		build_bounding_volume_hierarchy(n->left, from_triangle_i, pivot);
+		build_bounding_volume_hierarchy(n->right, pivot, to_triangle_i);
+	}
+}
+
+double TriangleMesh::center_of_triangle(unsigned int i, unsigned int axe)
+{
+	double center = .0;
+	center += vertices[indices[i].vtxi][axe];
+	center += vertices[indices[i].vtxj][axe];
+	center += vertices[indices[i].vtxk][axe];
+
+	return center / 3;
 }
 
 BoundingBox TriangleMesh::create_bounding_box(int from_index, int to_index) {
@@ -151,13 +229,22 @@ BoundingBox TriangleMesh::create_bounding_box(int from_index, int to_index) {
 
 	for (unsigned int i = from_index; i < to_index; i++)
 	{
-		m[0] = std::min(m[0], vertices[i][0]);
-		m[1] = std::min(m[1], vertices[i][1]);
-		m[2] = std::min(m[2], vertices[i][2]);
+		Vector points[3] = {
+			vertices[indices[i].vtxi],
+			vertices[indices[i].vtxj],
+			vertices[indices[i].vtxk]
+			};
 
-		M[0] = std::max(M[0], vertices[i][0]);
-		M[1] = std::max(M[1], vertices[i][1]);
-		M[2] = std::max(M[2], vertices[i][2]);
+		for (unsigned int j = 0; j < 3; j++)
+		{
+			m[0] = std::min(m[0], points[j][0]);
+			m[1] = std::min(m[1], points[j][1]);
+			m[2] = std::min(m[2], points[j][2]);
+
+			M[0] = std::max(M[0], points[j][0]);
+			M[1] = std::max(M[1], points[j][1]);
+			M[2] = std::max(M[2], points[j][2]);
+		}
 	}
 
 	return BoundingBox(m, M);

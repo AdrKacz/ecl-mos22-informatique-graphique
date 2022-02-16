@@ -21,12 +21,29 @@ public:
 	~BoundingBox();
 };
 
+class Node
+{
+public:
+	BoundingBox box;
+
+	Node* left;
+	Node* right;
+
+	unsigned int i1;
+	unsigned int i2;
+	
+	Node();
+	~Node();
+};
+
+
 class TriangleMesh : public Object
 {
 public:
 	TriangleMesh();
 	~TriangleMesh();
 
+	Node root_box;
 	BoundingBox box;
 	
 	bool intersect_with_triangle(const TriangleIndices&, const Ray&);
@@ -37,8 +54,11 @@ public:
     virtual bool intersect(const Ray&, Vector&, Vector&);
     virtual bool intersect(const Ray&, Vector&, Vector&, double&);
 
+	double center_of_triangle(unsigned int, unsigned int);
+
 	void readOBJ(const char* obj);
 	void init_bounding_box();
+	void build_bounding_volume_hierarchy(Node*, unsigned int, unsigned int);
 	BoundingBox create_bounding_box(int, int);
 
 	std::vector<TriangleIndices> indices;
