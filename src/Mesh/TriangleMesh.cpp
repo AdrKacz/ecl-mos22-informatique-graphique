@@ -91,11 +91,14 @@ bool TriangleMesh::intersect_with_triangle(const TriangleIndices& triangle, cons
 		return false;
 	}
 	P = vertice_i + e_1 * beta + e_2 * gamma;
+
+	// Calcul interpolated normal
+	N = normals[triangle.ni] * alpha + normals[triangle.nj] * beta + normals[triangle.nk] * gamma;
 	N.normalize();
 	return true;
 }
 
-bool TriangleMesh::intersect_with_bounding_box(const Ray& r)
+bool TriangleMesh::intersect_with_bounding_box(const Ray& r, const BoundingBox& box)
 {
 	// std::string outputm = std::string("m> " + box.m.to_string() + "\n");
 	// std::string outputM = std::string("M> " + box.M.to_string() + "\n--- --- ---\n");
@@ -150,37 +153,88 @@ bool TriangleMesh::intersect(const Ray& r, Vector& P, Vector& N)
 
 bool TriangleMesh::intersect(const Ray& r, Vector& P, Vector& N, double& T)
 {
-	if (!intersect_with_bounding_box(r)) {
-		return false;
+	if (USE_BVH) {
+		return intersect_bounding_volume_hierarchy(r, P, N, T);
 	}
-    bool has_intersected = false;
-    T = std::numeric_limits<double>::max();
-    for (int i = 0; i < indices.size(); i++)
-    {
-		double t;
-		Vector p, n;
-		if (intersect_with_triangle(indices[i], r, p, n, t))
+	else {
+		if (!intersect_with_bounding_box(r, root_box.box)) {
+			return false;
+		}
+		bool has_intersected = false;
+		T = std::numeric_limits<double>::max();
+		for (int i = 0; i < indices.size(); i++)
 		{
-			has_intersected = true;
-			if (t < T) {
-				T = t;
-				P = p;
-				N = n * +1.;
+			double t;
+			Vector p, n;
+			if (intersect_with_triangle(indices[i], r, p, n, t))
+			{
+				has_intersected = true;
+				if (t < T) {
+					T = t;
+					P = p;
+					N = n * +1.;
+				}
 			}
 		}
-    }
 
-    return has_intersected; 
+		return has_intersected; 
+	}
+}
+
+bool TriangleMesh::intersect_bounding_volume_hierarchy(const Ray& r, Vector& P, Vector& N, double& T)
+{
+	bool has_intersected = false;
+	T = std::numeric_limits<double>::max();
+	// std::string output = std::string("Intersect with BVH \n");
+	// std::cout << std::string(output);
+	std::list<Node*> queue;
+	queue.push_back(&root_box);
+	
+	while (!queue.empty()) {
+		// std::string output = std::string("Queue size: " + std::to_string(queue.size()) + "\n");
+		// std::cout << std::string(output);
+		Node* front = queue.front();
+		queue.pop_front();
+		if (!front->left) {
+			// std::string output = std::string("No more child, from i1=" + std::to_string(front->i1) + " to i2=" + std::to_string(front->i2) + "\n");
+			// std::cout << std::string(output);
+			for (unsigned int i = front->i1; i < front->i2; i++)
+			{
+				double t;
+				Vector p, n;
+				if (intersect_with_triangle(indices[i], r, p, n, t))
+				{
+					has_intersected = true;
+					if (t < T) {
+						T = t;
+						P = p;
+						N = n * +1.;
+					}
+				}
+			}
+		} else {
+			if (intersect_with_bounding_box(r, front->left->box)) {
+				// std::string output = std::string("Add left child");
+				// std::cout << std::string(output);
+				queue.push_front(front->left);
+			}
+			if (intersect_with_bounding_box(r, front->right->box)) {
+				// std::string output = std::string("Add right child");
+				// std::cout << std::string(output);
+				queue.push_front(front->right);
+			}
+		}
+	}
+	return has_intersected; 
 }
 
 void TriangleMesh::init_bounding_box() {
-	box = create_bounding_box(0, indices.size());
 	build_bounding_volume_hierarchy(&root_box, 0, indices.size());
 }
 
 void TriangleMesh::build_bounding_volume_hierarchy(Node* n, unsigned int from_triangle_i, unsigned int to_triangle_i)
 {
-	std::cout << "Build from " << from_triangle_i << " to " << to_triangle_i << std::endl;
+	// std::cout << "Build from " << from_triangle_i << " to " << to_triangle_i << std::endl;
 	n->box = create_bounding_box(from_triangle_i, to_triangle_i);
 	n->i1 = from_triangle_i;
 	n->i2 = to_triangle_i;

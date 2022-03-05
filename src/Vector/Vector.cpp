@@ -65,7 +65,7 @@ double Vector::norm() const {
 }
 
 void Vector::normalize() {
-    double n = norm();
+    const double n = norm();
     vec[0] /= n;
     vec[1] /= n;
     vec[2] /= n;

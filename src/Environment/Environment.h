@@ -10,6 +10,7 @@
 #include "../Sphere/Sphere.h"
 #include "../Mesh/TriangleMesh.h"
 #include "../Object/Object.h"
+#include "../Random/Random.h"
 
 class Environment
 {

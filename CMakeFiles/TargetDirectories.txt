@@ -1,3 +1,0 @@
-/Users/adrkacz/Documents/GitHubRepositories/ecl-mos22-informatique-graphique/CMakeFiles/InformatiqueGraphique.dir
-/Users/adrkacz/Documents/GitHubRepositories/ecl-mos22-informatique-graphique/CMakeFiles/edit_cache.dir
-/Users/adrkacz/Documents/GitHubRepositories/ecl-mos22-informatique-graphique/CMakeFiles/rebuild_cache.dir

@@ -4,42 +4,11 @@
 // ===== ===== ===== ===== Helpers
 // ===== ===== ===== =====
 
-#include <random>
-
 #include <iostream>
 #include <string>
 static void debug(const std::string& s) {
     std::string sp = s + '\n';
     std::cout << sp;
-}
-
-std::default_random_engine generator;
-std::uniform_real_distribution<double> distrib(0.0, 1.0);
-
-static Vector random_cos(const Vector& N) {
-    double r1 = distrib(generator);
-    double r2 = distrib(generator);
-    double x = cos(2 * M_PI * r1) * sqrt(1 - r2);
-    double y = sin(2 * M_PI * r1) * sqrt(1 - r2);
-    double z = sqrt(r2);
-
-    Vector T1, T2;
-    if (N[0] < N[1] && N[0] < N[2]) // Nx smallest
-    {
-        T1 = Vector(0, -N[2], N[1]);
-    } else if (N[0] < N[1] && N[0] < N[2]) // Ny smallest
-    {
-        T1 = Vector(-N[2], 0, N[0]);
-    } else { // nz smallest
-        T1 = Vector(-N[1], N[0], 0);
-    }
-    T1.normalize();
-    T2 = T1.cross(N);  
-    T2.normalize();
-
-    Vector w_i = T1 * x + T2 * y + N * z;
-    w_i.normalize();
-    return w_i;
 }
 
 static double clamp(const double& v, const double& low, const double& high) {
@@ -264,8 +233,9 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
             // debug(std::string("Get Light from " + std::to_string(random_sphere_light_index) + " to " + std::to_string(sphere_index)));
             Sphere* random_emissive_sphere = dynamic_cast<Sphere*>(objects[random_sphere_light_index]);
             Vector l = (P - random_emissive_sphere->O);
-            l.normalize();  
-            Vector w_random = random_cos(l);
+            l.normalize();
+            // TODO: Add flag to disable Soft Shadow on emissive spheres
+            Vector w_random = randh::random_cos(l);
             Vector random_P_on_light = random_emissive_sphere->O + w_random * random_emissive_sphere->R;
 
             Vector w_l = (random_P_on_light - P);
@@ -293,7 +263,7 @@ Vector Environment::get_intensity(const Vector& N, const Vector& P, const double
     }
 
     // Indirect lighting via all the rest (including emissive light by chance)
-    Vector w_i = random_cos(N);
+    Vector w_i = randh::random_cos(N);
     Ray indirect_r = Ray(P + N * .01, w_i);
     Vector indirect_P, indirect_N;
     Vector indirect_intensity;

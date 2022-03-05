@@ -6,9 +6,6 @@
 
 #include <random>
 
-std::default_random_engine rng_camera;
-std::uniform_real_distribution<double> r_unif_camera(0.0, 1.0);
-
 // ===== ===== ===== =====
 // ===== ===== ===== ===== Camera
 // ===== ===== ===== =====
@@ -49,8 +46,9 @@ const Vector Camera::get_position()
 const Ray Camera::get_ray(const Vector& u)
 {
     // TODO: Circular aperture, Ray r = Ray(C.get_position(), C.look_from(u));
-    double dx = (r_unif_camera(rng_camera) - .5) * 5.;
-    double dy = (r_unif_camera(rng_camera) - .5) * 5.;
+    Vector box = randh::box_muller();
+    double dx = box[0];
+    double dy = box[1];
 
     Vector origin = position + Vector(dx, dy, 0.);
     Vector point_to = position + look_from(u) * focus_distance - origin;

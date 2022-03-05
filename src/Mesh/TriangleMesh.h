@@ -1,11 +1,15 @@
 #ifndef DEF_TRIANGLEMESH
 #define DEF_TRIANGLEMESH
 
+#define USE_BVH false
+
+#include <string.h>
 #include <string>
 #include <iostream>
 #include <stdio.h>
 #include <algorithm>
 #include <vector>
+#include <list>
 
 #include "TriangleIndices.h"
 #include "../Ray/Ray.h"
@@ -44,15 +48,15 @@ public:
 	~TriangleMesh();
 
 	Node root_box;
-	BoundingBox box;
 	
 	bool intersect_with_triangle(const TriangleIndices&, const Ray&);
 	bool intersect_with_triangle(const TriangleIndices&, const Ray&, Vector&, Vector&, double&);
-	bool intersect_with_bounding_box(const Ray&);
+	bool intersect_with_bounding_box(const Ray&, const BoundingBox&);
 
 	virtual bool intersect(const Ray&);
     virtual bool intersect(const Ray&, Vector&, Vector&);
     virtual bool intersect(const Ray&, Vector&, Vector&, double&);
+	bool intersect_bounding_volume_hierarchy(const Ray&, Vector&, Vector&, double&);
 
 	double center_of_triangle(unsigned int, unsigned int);
 

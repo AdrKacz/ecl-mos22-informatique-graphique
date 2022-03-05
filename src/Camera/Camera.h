@@ -3,6 +3,7 @@
 
 #include "../Vector/Vector.h"
 #include "../Ray/Ray.h"
+#include "../Random/Random.h"
 
 class Camera
 {

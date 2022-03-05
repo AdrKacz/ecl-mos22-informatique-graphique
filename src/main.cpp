@@ -3,37 +3,36 @@
 #include <cmath>
 #include <thread>
 #include <random>
+#include <omp.h>
 
-// #include <ncurses.h>
+#include "Camera/Camera.h"
+#include "Vector/Vector.h"
+#include "Ray/Ray.h"
+#include "Sphere/Sphere.h"
+#include "Mesh/TriangleMesh.h"
+#include "Object/Object.h"
+#include "Environment/Environment.h"
+#include "Random/Random.h"
 
-#include "src/Camera/Camera.h"
-#include "src/Vector/Vector.h"
-#include "src/Ray/Ray.h"
-#include "src/Sphere/Sphere.h"
-#include "src/Mesh/TriangleMesh.h"
-#include "src/Object/Object.h"
-#include "src/Environment/Environment.h"
 
-
-#define MESH_PATH "../meshes/dog.obj"
+#define MESH_PATH "meshes/dog.obj"
 #define USE_FOCAL_DISTANCE false
 #define FOCAL_DISTANCE 40
-#define USE_BOX_MULLER true
-#define BOX_MULLER_SIGMA 0.5
+#define USE_BOX_MULLER false
 #define USE_INDIRECT_LIGHTING false
 #define DYNAMIC_MOVEMENT false // true to move with arrow key, false to generate one image
-#define INDIRECT_RAYS 1 // indirect rays number
+#define INDIRECT_RAYS 1 // indirect rays number (no indirect ray with value 1)
 
 
 #define HALF_BOX_DIMENSION 50 // in world unit
 #define PIXELS_DIMENSION 128 // in pixels
-#define NB_THREAD_GRID 6 // grid n * n > NB_THREAD = NB_THREAD_GRID * NB_THREAD_GRID
+#define OMP_NUM_THREADS 16
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "library/stb_image_write.h"
+#include "../library/stb_image_write.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "library/stb_image.h"
+#include "../library/stb_image.h"
 
 // ===== ===== ===== =====
 // ===== ===== ===== ===== Helpers
@@ -43,88 +42,52 @@ double clamp(const double& v, const double& low, const double& high) {
     return std::max(std::min(v, high), low);
 }
 
-std::default_random_engine rng;
-std::uniform_real_distribution<double> r_unif(0.0, 1.0);
-constexpr double epsilon = std::numeric_limits<double>::epsilon();
-constexpr double two_pi = 2 * M_PI;
-Vector box_muller() {
-    double u, v;
-    do
-    {
-        u = r_unif(rng);
-    } while (u <= epsilon);
-    v = r_unif(rng);
-
-    double mag = BOX_MULLER_SIGMA * sqrt(-2.0 * log(u));
-    double x = mag * cos(2 * M_PI * v);
-    double y = mag * sin(2 * M_PI * v);
-
-    return Vector(x, y, 0);
-}
-
 // ===== ===== ===== =====
 // ===== ===== ===== ===== Main
 // ===== ===== ===== =====
 
-void refresh(std::string filename, std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID], const int step, Environment& E, const int W, const int H, Camera& C, double I, double I_pow_factor, std::vector<unsigned char>& image) {
+void refresh(std::string filename, Environment& E, const int W, const int H, Camera& C, double I, double I_pow_factor, std::vector<unsigned char>& image) {
     auto start = std::chrono::high_resolution_clock::now();
-    for (int x = 0; x < NB_THREAD_GRID; x++)    
-    {
-        for (int y = 0; y < NB_THREAD_GRID; y++) {
-            // uncomment to see black diagonal (thread not active)
-            // if (x == y) { continue; }
-            threads[NB_THREAD_GRID * x + y] = std::thread([x, y, &step, &E, &W, &H, &C, &I, &I_pow_factor, &image]()
-            {
-                for (int i = y * step; i < std::min(H, (y + 1) * step); i++) {
-                    for (int j = x * step; j < std::min(W, (x + 1) * step); j++) {
-                        Vector intensity = Vector();
-                        // INDIRECT_RAYS rays at random
-                        for (int k = 0; k < INDIRECT_RAYS; k++) {
-                            Vector u = Vector(j - W / 2 + 0.5, H - i - H / 2 + 0.5, C.z);
-                            if (USE_BOX_MULLER) {
-                                Vector random_box = box_muller();
-                                u[0] += random_box[0];
-                                u[1] += random_box[1];
-                            }
-                            u.normalize();
-
-                            Ray r;
-                            if (USE_FOCAL_DISTANCE) {
-                                r = C.get_ray(u);
-                            } else {
-                                r = Ray(C.get_position(), C.look_from(u));
-                            }
-                            Vector P, N;
-                            int object_index;
-                            if (E.intersect(r, P, N, &object_index))
-                            {
-                                intensity = intensity + E.get_intensity(N, P, I, object_index, r, 0);
-                            }
-                        }
-                        intensity = intensity / INDIRECT_RAYS * 1.0;
-                        image[(i*W + j) * 3 + 0] = clamp(std::pow(intensity[0], I_pow_factor), 0., 255.);
-                        image[(i*W + j) * 3 + 1] = clamp(std::pow(intensity[1], I_pow_factor), 0., 255.);
-                        image[(i*W + j) * 3 + 2] = clamp(std::pow(intensity[2], I_pow_factor), 0., 255.);
-                    }
+    #pragma omp parallel for num_threads(OMP_NUM_THREADS) // schedule(dynamic, 1)
+    for (int y = 0; y < H; y++) {
+        for (int x = 0 ; x < W; x++) {
+            Vector intensity = Vector();
+            // INDIRECT_RAYS rays at random
+            for (int k = 0; k < INDIRECT_RAYS; k++) {
+                Vector u = Vector(x - W / 2 + 0.5, H - y - H / 2 + 0.5, C.z);
+                if (USE_BOX_MULLER) {
+                    Vector random_box = randh::box_muller();
+                    u[0] += random_box[0];
+                    u[1] += random_box[1];
                 }
-            });
+                u.normalize();
+
+                Ray r;
+                if (USE_FOCAL_DISTANCE) {
+                    r = C.get_ray(u);
+                } else {
+                    r = Ray(C.get_position(), C.look_from(u));
+                }
+                Vector P, N;
+                int object_index;
+                if (E.intersect(r, P, N, &object_index))
+                {
+                    intensity = intensity + E.get_intensity(N, P, I, object_index, r, 0);
+                }
+            }
+            intensity = intensity / INDIRECT_RAYS * 1.0;
+            image[(y * W + x) * 3 + 0] = clamp(std::pow(intensity[0], I_pow_factor), 0., 255.);
+            image[(y * W + x) * 3 + 1] = clamp(std::pow(intensity[1], I_pow_factor), 0., 255.);
+            image[(y * W + x) * 3 + 2] = clamp(std::pow(intensity[2], I_pow_factor), 0., 255.);
         }
     }
 
-    for (int x = 0; x < NB_THREAD_GRID; x++)    
-    {
-        for (int y = 0; y < NB_THREAD_GRID; y++) {
-            // uncomment to see black diagonal (thread not active)
-            // if (x == y) { continue; }
-            threads[x * NB_THREAD_GRID + y].join();
-        }
-    }
     auto end = std::chrono::high_resolution_clock::now();
     auto diff_sec = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
 
     if (!DYNAMIC_MOVEMENT)
     {
-        std::cout << "Temps pour la création de l'image: " << diff_sec.count() / 1000000.0 << "ms\n";
+        std::cout << "\nTemps pour la création de l'image: " << diff_sec.count() / 1000000.0 << "ms\n";
     }
 
     stbi_write_png(filename.c_str(), W, H, 3, &image[0], 0);
@@ -140,21 +103,11 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     }
-    filename = "../outputs/" + filename;
-
-    // TODO: Random has always the same seed
-    // Vector test_box = box_muller();
-    // std::cout << test_box[0] << "\n";
-    // std::cout << test_box[1] << "\n";
-    // std::cout << test_box[2] << "\n";
+    filename = "outputs/" + filename;
 
     // Dimension
 	const int W = PIXELS_DIMENSION;
 	const int H = PIXELS_DIMENSION;
-
-    // Thread
-    const int step = std::ceil(PIXELS_DIMENSION * 1.0 / NB_THREAD_GRID * 1.0);
-    std::thread threads[NB_THREAD_GRID * NB_THREAD_GRID];
 
     Environment E = Environment();
 
@@ -193,7 +146,7 @@ int main(int argc, char* argv[]) {
     double alpha = 90 * M_PI / 180;
     Camera C = Camera(Vector(0, 0, 40), alpha, PIXELS_DIMENSION, FOCAL_DISTANCE);
 	
-	std::vector<unsigned char> image(W*H * 3, 0);
+	std::vector<unsigned char> image(W * H * 3, 0);
 
     double I = 1e10;
     double I_pow_factor = 1. / 2.2;
@@ -204,7 +157,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Start refreshing screen..." << std::endl;
     while (is_alive) {
-        refresh(filename, threads, step, E, W, H, C, I, I_pow_factor, image);
+        refresh(filename, E, W, H, C, I, I_pow_factor, image);
         if (!DYNAMIC_MOVEMENT)
         {
             is_alive = false;

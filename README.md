@@ -5,6 +5,15 @@ Travail réalisé pour le MOS 2.2 - Informatique Graphique à l'École Centrale 
 
 # Comment exécuter le code ?
 
+# Avec Make
+
+```sh
+make && ./InformatiqueGraphique
+make clean
+```
+
+## Avec Cmake
+
 1. Installer [`cmake`](https://cmake.org/install/) *(cela devrait déjà être le cas)*
 
 2. Cloner le répertoire
