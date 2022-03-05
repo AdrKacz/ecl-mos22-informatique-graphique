@@ -2,6 +2,8 @@
 
 > AdrKacz (@AdrKacz), ECL, MOS 2.2, Informatique Graphique, Nicolas Bonneel (@nbonneel)
 
+> Le code ci-dessous sera tout le temps, sauf indiqué, du pseudo-code, pour faciliter la lecture
+
 Réalisation d'un *RayTracer* en **C++** avec les options suivantes:
 - Sphère
 - Source de lumière ponctuelle
@@ -27,11 +29,60 @@ Réalisation d'un *RayTracer* en **C++** avec les options suivantes:
 make && ./InformatiqueGraphique && make clean
 ```
 
+# Création de l'image
+
+```
+FOR X in image widht
+    FOR Y in image height
+        U = Vecteur normalisé FROM Origin TO X,Y
+        COLOR = couleur dans l'environment à U
+        image[X, Y] = COLOR
+```
+
 # Création d'une sphère
+
+Pour créer une sphère, il suffit de lui ajouter un rayon et une origine. Je calcule ensuite l'intersection entre un `rayon` potentiel et la sphère et renvoie la normal au point d'intersection ainsi que le point d'intersection et la distance avec l'intersection.
 
 # Création d'une source de lumière ponctuelle
 
+```
+GET_COLOR (POINT):
+    IF (la droite entre POINT et LIGHT n'intersecte rien)
+        COLOR = couleur de POINT en fonction de LIGHT
+    ELSE
+        COLOR = noir
+```
+
+![BE1-1](./outputs/be1-1.png)
+
 # Réduction du temps de calcul avec le *multi-threading*
+
+## Avec <thread>
+
+Le calcul précédent a pris **233.621ms**.
+
+J'ajoute donc des *threads* avec la *library* `thread`.
+
+Je divise donc l'image en une grille et assigne à chaque *thread* une cellule.
+
+```
+FOR C in colonnes
+    FOR L in lignes
+        nouveau thread at CELL C,L
+WAIT FOR ALL threads
+```
+
+Le temps de calcul, pour la même image, passe à **54.0334ms** soit une diminution du temps de calcul par 4.
+
+Pour illustrer la méthode, voici le résultat lorsque je n'effectue pas le calcul si `X = Y`.
+
+![BE1-Parallel-Diag](./outputs/be1-parallel-diag.png)
+
+## Avec Pragma
+
+Cependant, cette méthode allourdi le code. En effet, il faut découper au préalable l'image, lancer chaque *thread* individuellement, puis attendre la fin de chaque *thread*.
+
+Pour éviter de modifier le code, j'utile donc *Pragma* qui permet d'obtenir un résultat similaire en une instruction: `#pragma omp parallel for num_threads(OMP_NUM_THREADS) schedule(dynamic, 1)`
 
 # Ajouts des matériaux
 
