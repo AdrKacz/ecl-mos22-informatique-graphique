@@ -1,7 +1,8 @@
 #ifndef DEF_TRIANGLEMESH
 #define DEF_TRIANGLEMESH
 
-#define USE_BVH false
+#define USE_BVH true
+#define USE_BB true
 
 #include <string.h>
 #include <string>

@@ -157,7 +157,7 @@ bool TriangleMesh::intersect(const Ray& r, Vector& P, Vector& N, double& T)
 		return intersect_bounding_volume_hierarchy(r, P, N, T);
 	}
 	else {
-		if (!intersect_with_bounding_box(r, root_box.box)) {
+		if (USE_BB && !intersect_with_bounding_box(r, root_box.box)) {
 			return false;
 		}
 		bool has_intersected = false;
@@ -229,7 +229,11 @@ bool TriangleMesh::intersect_bounding_volume_hierarchy(const Ray& r, Vector& P, 
 }
 
 void TriangleMesh::init_bounding_box() {
-	build_bounding_volume_hierarchy(&root_box, 0, indices.size());
+	if (USE_BVH) {
+		build_bounding_volume_hierarchy(&root_box, 0, indices.size());
+	} else if (USE_BB) {
+		root_box.box = create_bounding_box(0, indices.size());
+	}
 }
 
 void TriangleMesh::build_bounding_volume_hierarchy(Node* n, unsigned int from_triangle_i, unsigned int to_triangle_i)
