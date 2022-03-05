@@ -39,3 +39,6 @@ build/
 
 # Meshes
 !meshes/*.obj
+
+# Working image
+image.png

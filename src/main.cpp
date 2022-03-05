@@ -102,8 +102,8 @@ int main(int argc, char* argv[]) {
             std::cout << "\e[1mError: Filename must end with \".png\"\e[0m\n";
             return 1;
         }
+        filename = "outputs/" + filename;
     }
-    filename = "outputs/" + filename;
 
     // Dimension
 	const int W = PIXELS_DIMENSION;
