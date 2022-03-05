@@ -12,9 +12,9 @@ Réalisation d'un *RayTracer* en **C++** avec les options suivantes:
 - Matériaux opaque avec une couleur
 - Matériaux réfléchissants
 - Matériaux transparents
+- *Anti-aliasing*
 - Source de lumière sphérique
     - Éclairage indirect
-- *Anti-aliasing*
 - Profondeur de champ
 - *Mesh*
     - Boîte englobante (réduction du temps de calcul)
@@ -88,19 +88,54 @@ Pour éviter de modifier le code, j'utile donc *Pragma* qui permet d'obtenir un 
 
 ## Matériaux opaques
 
+![materiaux-opaques](outputs/be2-color.png)
+
 ## Matériaux réfléchissants
+
+![materiaux-reflechissants](outputs/be2-bounce.png)
 
 ## Matériaux transparents
 
-# Création d'une source de lumière sphérique
+![materiaux-transparents](outputs/be2-transparence.png)
 
 # Réduction du crénelage par *anti-aliasing*
+
+**TODO: Re faire le calcul sans l'éclairage indirect**
+
+![anti-aliasing](outputs/be3-box-muller.png)
+
+# Création d'une source de lumière sphérique
+
+## Éclairage indirect
+
+![lum-sphere-0](outputs/indirect-lighting-128-rays.png)
+
+## Éclairage non ponctuelle
+
+![lum-sphere-1](outputs/be4-light-r20.png)
+
+![lum-sphere-2](outputs/be4-light-smart-r20.png)
 
 # Paramétrage de la profondeur de champ de la caméra
 
 # Création de *mesh*
 
+## Un triangle
+
+![triangle](outputs/be5-one-triangle.png)
+
+## Un chien
+
+![dog](outputs/dog-512.png)
+
 ## Réduction du temps de calcul avec une boîte englobante
+
+> Tous les paramètres sont désactivés, il ne reste plus que l'éclairage ponctuelle directe.
+
+Utilisation de la *Bounding Box* | Temps de calcul
+-- | --
+Non | 40610 ms
+Oui | 11788 ms
 
 ## ~~Réduction du temps de calcul avec un *Bounding Volume Hierarchy*~~
 
@@ -128,6 +163,27 @@ zzqq
 
 Puis `ENTER` (le programme ne s'actualise pas tant que tu ne cliques pas sur `ENTER`, c'est une limitation que je vais essayer de corriger prochainement)
 
+# Les erreurs que j'ai rencontrées
+
+**TODO: Détailler la correction**
+
+**TODO: Ajouter erreur du triangle dédoublé**
+
+## Intersection avec soi-même
+
+![self-color-err](./outputs/be2-bounce-artefact.png)
+
+## Éclairage indirect saturé
+
+![indirect-err](./outputs/indirect-lighting-error.png)
+
+## Erreur de `type`
+
+![unsigned-int](./outputs/dog-pragma-unsigned-int-error.png)
+
+## Bounding Volume Hierarchy lacunaire
+
+![bvh-err](./outputs/dog-bvh-buggy.png)
 
 ---
 
