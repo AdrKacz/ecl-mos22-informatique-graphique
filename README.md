@@ -1,47 +1,63 @@
-![Mouvement dans l'espace](./outputs/be2-extra-movement.gif)
+# Informatique Graphique
 
-# ecl-mos22-informatique-graphique
-Travail réalisé pour le MOS 2.2 - Informatique Graphique à l'École Centrale de Lyon. L'objectif est d'implémenter un PathTracer en C++
+> AdrKacz (@AdrKacz), ECL, MOS 2.2, Informatique Graphique, Nicolas Bonneel (@nbonneel)
 
-# Comment exécuter le code ?
+Réalisation d'un *RayTracer* en **C++** avec les options suivantes:
+- Sphère
+- Source de lumière ponctuelle
+    - Éclairage direct
+- *Multi-threading* (réduction du temps de calcul)
+- Matériaux opaque avec une couleur
+- Matériaux réfléchissants
+- Matériaux transparents
+- Source de lumière sphérique
+    - Éclairage indirect
+- *Anti-aliasing*
+- Profondeur de champ
+- *Mesh*
+    - Boîte englobante (réduction du temps de calcul)
+    - ~~*Bounding Volume Hierarchy*(réduction du temps de calcul)~~
+- Déplacement dans l'espace
 
-# Avec Make
+### Comment exécuter le code ?
+
+> Le compilateur doit supporter l'option *-fopenmp* pour pouvoir utiliser *PRAGMA*
 
 ```sh
-make && ./InformatiqueGraphique
-make clean
+make && ./InformatiqueGraphique && make clean
 ```
 
-## Avec Cmake
+# Création d'une sphère
 
-1. Installer [`cmake`](https://cmake.org/install/) *(cela devrait déjà être le cas)*
+# Création d'une source de lumière ponctuelle
 
-2. Cloner le répertoire
+# Réduction du temps de calcul avec le *multi-threading*
 
-```
-git clone https://github.com/AdrKacz/ecl-mos22-informatique-graphique.git
-cd ecl-mos22-informatique-graphique
-```
+# Ajouts des matériaux
 
-3. Créer un dossier `./build` et lancer le *build*
+## Matériaux opaques
 
-```
-mkdir build
-cd build
-cmake ..
-make
-```
+## Matériaux réfléchissants
 
-4. Exécuter le code
+## Matériaux transparents
 
-```
-./InformatiqueGraphique
-./InformatiqueGraphique mon-image.png
-```
+# Création d'une source de lumière sphérique
 
-> Pour compiler et exécuter le code : `make && ./InformatiqueGraphique`
+# Réduction du crénelage par *anti-aliasing*
 
-# Comment se déplacer
+# Paramétrage de la profondeur de champ de la caméra
+
+# Création de *mesh*
+
+## Réduction du temps de calcul avec une boîte englobante
+
+## ~~Réduction du temps de calcul avec un *Bounding Volume Hierarchy*~~
+
+# Déplacement de la caméra dynamique dans l'espace
+
+![Mouvement dans l'espace](./outputs/be2-extra-movement.gif)
+
+## Comment se déplacer
 
 > Séquence utiliser pour la présentation : `zzzzzzddddddzzzzzzzzzqqqqqzzzzzzzzqqqqqsssss`
 
@@ -60,6 +76,11 @@ zzqq
 ```
 
 Puis `ENTER` (le programme ne s'actualise pas tant que tu ne cliques pas sur `ENTER`, c'est une limitation que je vais essayer de corriger prochainement)
+
+
+---
+
+> Les informations ci-dessous ne sont plus à jour.
 
 # Notes
 - [x] Calcul parallèle avec `<thread>`
