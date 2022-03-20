@@ -235,7 +235,7 @@ O += B
 R = rayon issu du vecteur partant de O + B de longeur FOCAL DISTANCE en pointant dans la direction de la caméra
 ```
 
-> Les deux images représentent la même scène, sans amélioration de rendu avec une source ponctuelle. L'image de **gauche** n'utilise pas de distance focal, l'image de **droite** à une **distance focal de 20 unité**.
+> Les deux images représentent la même scène, sans amélioration de rendu avec une source ponctuelle. L'image de **gauche** n'utilise pas de distance focal, l'image de **droite** à une **distance focal de 20 unité** *(distance entre la caméra et la boule transparente)*.
 
 <p float="left" align="middle">
     <img src="outputs/focal-20-off.png" width="32%">
