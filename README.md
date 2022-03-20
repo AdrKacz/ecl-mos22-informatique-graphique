@@ -64,7 +64,9 @@ GET_COLOR (POINT):
         COLOR = noir
 ```
 
-![BE1-1](./outputs/be1-1.png)
+<p float="left" align="middle">
+    <img src="./outputs/be1-1.png" width="32%">
+</p>
 
 # Réduction du temps de calcul avec le *multi-threading*
 
@@ -87,7 +89,9 @@ Le temps de calcul, pour la même image, passe à **54.0334ms** soit une diminut
 
 Pour illustrer la méthode, voici le résultat lorsque je n'effectue pas le calcul si `C = L`.
 
-![BE1-Parallel-Diag](./outputs/be1-parallel-diag.png)
+<p float="left" align="middle">
+    <img src="./outputs/be1-parallel-diag.png" width="32%">
+</p>
 
 ### Temps de calcul
 
@@ -115,7 +119,9 @@ GET COLOR (POINT): (vector)
     RETURN (vector)ALBEDO * (flottant)intensité à POINT
 ```
 
-![materiaux-opaques](outputs/be2-color.png)
+<p float="left" align="middle">
+    <img src="outputs/be2-color.png" width="32%">
+</p>
 
 ## Matériaux réfléchissants
 
@@ -128,7 +134,9 @@ IF boule IS reflechissante
         RETURN GET_COLOR (I)
 ```
 
-![materiaux-reflechissants](outputs/be2-bounce.png)
+<p float="left" align="middle">
+    <img src="outputs/be2-bounce.png" width="32%">
+</p>
 
 ## Matériaux transparents
 
@@ -153,7 +161,9 @@ IF boule IS transparent
         RETURN GET_COLOR (I)
 ```
 
-![materiaux-transparents](outputs/be2-transparence.png)
+<p float="left" align="middle">
+    <img src="outputs/be2-transparence.png" width="32%">
+</p>
 
 # Réduction du crénelage par *anti-aliasing*
 
@@ -162,7 +172,10 @@ Réduction du crénelage | Méthode
 Non | Envoyer **un rayon par pixel** pour obtenir sa couleur
 Oui | Envoyer **n rayon par pixel** selon une **distribution normale** sur la surface du pixel
 
-![anti-aliasing](outputs/be3-box-muller.png)
+
+<p float="left" align="middle">
+    <img src="outputs/be3-box-muller.png" width="32%">
+</p>
 
 # Création d'une source de lumière sphérique
 
@@ -184,7 +197,9 @@ GET_COLOR (POINT, NOMBRE REBOND):
         COLOR += GET_COLOR (I, NOMBRE REBOND + 1)
 ```
 
-![lum-sphere-0](outputs/indirect-lighting-128-rays.png)
+<p float="left" align="middle">
+    <img src="outputs/indirect-lighting-128-rays.png" width="32%">
+</p>
 
 ## Éclairage non ponctuelle
 
@@ -198,13 +213,17 @@ GET_COLOT (POINT):
         RETURN lumière de la boule fonction de son albedo et de son intensité
 ```
 
-![lum-sphere-1](outputs/be4-light-r20.png)
+<p float="left" align="middle">
+    <img src="outputs/be4-light-r20.png" width="32%">
+</p>
 
 Les chances d'arriver jusqu'à une boule émissive au hasard sont faibles, l'environment est donc sombre. Pour contrer ce problème, j'envoie deux rayons pour l'éclairage indirect :
 - un dans une direction uniformément aléatoire *(le même que jusqu'à présent)* ;
 - un dans la direction d'une boule émissive.
 
-![lum-sphere-2](outputs/be4-light-smart-r20.png)
+<p float="left" align="middle">
+    <img src="outputs/be4-light-smart-r20.png" width="32%">
+</p>
 
 # Paramétrage de la profondeur de champ de la caméra
 
@@ -222,11 +241,15 @@ R = rayon issu du vecteur partant de O + B de longeur FOCAL DISTANCE en pointant
 
 ## Un triangle
 
-![triangle](outputs/be5-one-triangle.png)
+<p float="left" align="middle">
+    <img src="outputs/be5-one-triangle.png" width="32%">
+</p>
 
 ## Un chien
 
-![dog](outputs/dog-512.png)
+<p float="left" align="middle">
+    <img src="outputs/dog-512.png" width="32%">
+</p>
 
 ## Réduction du temps de calcul avec une boîte englobante
 
@@ -271,11 +294,15 @@ zzqq
 
 Lorsque le rayon réfléchi est émis d'une surface, si je ne déplace pas l'object d'un petit **delta** en direction de la normale de l'object, le rayon à une forte de chance d'intersecter avec la surface initiale à cause de la discrétisation de l'espace.
 
-![self-color-err](./outputs/be2-bounce-artefact.png)
+<p float="left" align="middle">
+    <img src="./outputs/be2-bounce-artefact.png" width="32%">
+</p>
 
 ## Éclairage indirect saturé
 
-![indirect-err](./outputs/indirect-lighting-error.png)
+<p float="left" align="middle">
+    <img src="./outputs/indirect-lighting-error.png" width="32%">
+</p>
 
 ## Erreur de `type`
 
@@ -287,11 +314,15 @@ Cela donne un rayon partant d'éexcessivement loin qui n'intersecte avec rien, d
 
 Il suffit *(après trois heures d'incompréhension)* d'utiliser le type `int` pour supprimer l'erreur.
 
-![unsigned-int](./outputs/dog-pragma-unsigned-int-error.png)
+<p float="left" align="middle">
+    <img src="./outputs/dog-pragma-unsigned-int-error.png" width="32%">
+</p>
 
 ## Bounding Volume Hierarchy lacunaire
 
-![bvh-err](./outputs/dog-bvh-buggy.png)
+<p float="left" align="middle">
+    <img src="./outputs/dog-bvh-buggy.png" width="32%">
+</p>
 
 ---
 
