@@ -4,7 +4,7 @@
 
 > Le code ci-dessous sera tout le temps, sauf indiqué, du pseudo-code, pour faciliter la lecture
 
-Réalisation d'un *RayTracer* en **C++** avec les options suivantes:
+Réalisation d'un *raytracer* en **C++** avec les options suivantes:
 - Sphère
 - Source de lumière ponctuelle
     - Éclairage direct
@@ -21,13 +21,21 @@ Réalisation d'un *RayTracer* en **C++** avec les options suivantes:
     - ~~*Bounding Volume Hierarchy*(réduction du temps de calcul)~~
 - Déplacement dans l'espace
 
-### Comment exécuter le code ?
+# Comment exécuter le code ?
 
 > Le compilateur doit supporter l'option *-fopenmp* pour pouvoir utiliser *PRAGMA*
 
 ```sh
 make && ./InformatiqueGraphique && make clean
 ```
+
+> Mon ordinateur ne supporte pas l'option `-fopenmp`.
+
+## Utilisation d'une machine de Centrale Lyon
+
+ J'ai pu travailler sur une machine en **SSH** de l'École Centrale de Lyon.
+
+## Utilisation d'une image Docker
 
 # Création de l'image
 
@@ -41,7 +49,10 @@ FOR X in image widht
 
 # Création d'une sphère
 
-Pour créer une sphère, il suffit de lui ajouter un rayon et une origine. Je calcule ensuite l'intersection entre un `rayon` potentiel et la sphère et renvoie la normal au point d'intersection ainsi que le point d'intersection et la distance avec l'intersection.
+Pour créer une sphère, il suffit de lui ajouter un rayon et une origine. Je calcule ensuite l'intersection entre un `rayon` potentiel et la sphère et renvoie :
+- la normale au point d'intersection
+- le point d'intersection 
+- la distance avec l'intersection.
 
 # Création d'une source de lumière ponctuelle
 
@@ -72,35 +83,84 @@ FOR C in colonnes
 WAIT FOR ALL threads
 ```
 
-Le temps de calcul, pour la même image, passe à **54.0334ms** soit une diminution du temps de calcul par 4.
+Le temps de calcul, pour la même image, passe à **54.0334ms** soit une diminution du temps de calcul par **4**.
 
-Pour illustrer la méthode, voici le résultat lorsque je n'effectue pas le calcul si `X = Y`.
+Pour illustrer la méthode, voici le résultat lorsque je n'effectue pas le calcul si `C = L`.
 
 ![BE1-Parallel-Diag](./outputs/be1-parallel-diag.png)
 
+### Temps de calcul
+
+> Réalisé pour une sphère dans une pièce composée de quatres autres sphères, sans aucune amélioration de rendu.
+
+Calcul en parralèle | Temps de calcul
+--  | --
+Non | **233.621 ms**
+Oui | **54.0334 ms**
+
 ## Avec Pragma
 
-Cependant, cette méthode allourdi le code. En effet, il faut découper au préalable l'image, lancer chaque *thread* individuellement, puis attendre la fin de chaque *thread*.
+Cependant, cette méthode allourdie le code. En effet, il faut découper au préalable l'image, lancer chaque *thread* individuellement, puis attendre la fin de chaque *thread*.
 
-Pour éviter de modifier le code, j'utile donc *Pragma* qui permet d'obtenir un résultat similaire en une instruction: `#pragma omp parallel for num_threads(OMP_NUM_THREADS) schedule(dynamic, 1)`
+Pour éviter de modifier le code, j'utile donc *PRAGMA* qui permet d'obtenir un résultat similaire en une instruction: `#pragma omp parallel for num_threads(OMP_NUM_THREADS) schedule(dynamic, 1)`
 
 # Ajouts des matériaux
 
 ## Matériaux opaques
 
+Les matériaux opaques rajoute la possibilté de définir un **albedo** qui est la couleur de l'objet.
+
+```
+GET COLOR (POINT): (vector)
+    RETURN (vector)ALBEDO * (flottant)intensité à POINT
+```
+
 ![materiaux-opaques](outputs/be2-color.png)
 
 ## Matériaux réfléchissants
+
+Les matériaux réfléchissants renvoient les rayons lumineux reçus par le *raytracer*.
+
+```
+IF boule IS reflechissante
+    R = rayon réfléchi à intersection avec de boule
+    IF intersection I entre une boule et R
+        RETURN GET_COLOR (I)
+```
 
 ![materiaux-reflechissants](outputs/be2-bounce.png)
 
 ## Matériaux transparents
 
+Les matériaux transparents laissent passer les rayons lumineux reçu par le *raytracer*.
+
+Il faut bien distinguer les rayons entrant dans le matériau et les rayons sortant du matériau.
+
+> Dans le code, `n` symbolise l'**indice de refraction**.
+
+```
+IF boule IS transparent
+    IF rayon IS entrant
+        N1 = n de air
+        N2 = n de boule
+    ELSE
+        N1 = n de boule
+        N2 = n de air
+
+    T = rayon transmis en fonction de N1 / N2 à intersection avec boule 
+
+    if intersection I entre boule et T
+        RETURN GET_COLOR (I)
+```
+
 ![materiaux-transparents](outputs/be2-transparence.png)
 
 # Réduction du crénelage par *anti-aliasing*
 
-**TODO: Re faire le calcul sans l'éclairage indirect**
+Réduction du crénelage | Méthode
+-- | --
+Non | Envoyer **un rayon par pixel** pour obtenir sa couleur
+Oui | Envoyer **n rayon par pixel** selon une **distribution normale** sur la surface du pixel
 
 ![anti-aliasing](outputs/be3-box-muller.png)
 
@@ -108,15 +168,55 @@ Pour éviter de modifier le code, j'utile donc *Pragma* qui permet d'obtenir un 
 
 ## Éclairage indirect
 
+Ajouter de l'éclairage indirect consiste à prendre en compte les contributions des rayons ayant rebondis plusieurs fois sur d'autre surfaces avant d'éclairer la surface étudiée.
+
+Ici, je simule le phénomène inverse : à chaque fois que j'intersecte avec une surface, je renvoie un nouveau rayon dans une direction aléatoire pour ajouter sa contribution. 
+
+> Il faut penser à limiter le nombre maximum de rebond : `Environment::BOUNCES_MAX`
+
+```
+GET_COLOR (POINT, NOMBRE REBOND):
+    IF NOMBRE REBONDS > Environment::BOUNCES_MAX:
+        RETURN
+
+    W = rayon aléatoire émis autour de intersection selon une loi uniforme
+    IF intersection I avec une boule
+        COLOR += GET_COLOR (I, NOMBRE REBOND + 1)
+```
+
 ![lum-sphere-0](outputs/indirect-lighting-128-rays.png)
 
 ## Éclairage non ponctuelle
 
+Jusqu'à présent, l'éclairage provenait d'un point dans l'espace. Maintenant que chaque object est éclairé par son environment, nous pouvons ajouter des boules qui émettent de la lumière.
+
+Un rayon issu de l'éclairage indirect a une intensité positive lorsqu'il rébondit jusqu'à une boule émissive.
+
+```
+GET_COLOT (POINT):
+    IF boule IS émissive
+        RETURN lumière de la boule fonction de son albedo et de son intensité
+```
+
 ![lum-sphere-1](outputs/be4-light-r20.png)
+
+Les chances d'arriver jusqu'à une boule émissive au hasard sont faibles, l'environment est donc sombre. Pour contrer ce problème, j'envoie deux rayons pour l'éclairage indirect :
+- un dans une direction uniformément aléatoire *(le même que jusqu'à présent)* ;
+- un dans la direction d'une boule émissive.
 
 ![lum-sphere-2](outputs/be4-light-smart-r20.png)
 
 # Paramétrage de la profondeur de champ de la caméra
+
+Pour simuler la profondeur de champ, je simule l'ouverture d'une caméra. Le rayon émis de la caméra ne provient plus d'un point fixe.
+
+```
+O = origine de la caméra
+B = vecteur normalemment aléatoire
+O += B
+
+R = rayon issu du vecteur partant de O + B de longeur FOCAL DISTANCE en pointant dans la direction de la caméra
+```
 
 # Création de *mesh*
 
@@ -130,12 +230,12 @@ Pour éviter de modifier le code, j'utile donc *Pragma* qui permet d'obtenir un 
 
 ## Réduction du temps de calcul avec une boîte englobante
 
-> Tous les paramètres sont désactivés, il ne reste plus que l'éclairage ponctuelle directe.
+> Tous les paramètres d'amélioration du rendu sont désactivés, il n'y a que de l'éclairage directe.
 
 Utilisation de la *Bounding Box* | Temps de calcul
 -- | --
-Non | 40610 ms
-Oui | 11788 ms
+Non | **40610 ms**
+Oui | **11788 ms**
 
 ## ~~Réduction du temps de calcul avec un *Bounding Volume Hierarchy*~~
 
@@ -153,15 +253,13 @@ Oui | 11788 ms
  - `s` : en arrière
  - `q` : tourner à gauche
  - `d` : tourner à droite
-3. `ENTER` pour valider la suite de mouvements (tu peux entrer plus d'un déplacement à la fois pour une animation plus longue)
+3. `ENTER` pour valider la suite de mouvements
 
 Par exemple, si je souhaite faire deux pas en avant puis regarder à gaude de deux crans, je peux entrer : 
 
 ```
 zzqq
 ```
-
-Puis `ENTER` (le programme ne s'actualise pas tant que tu ne cliques pas sur `ENTER`, c'est une limitation que je vais essayer de corriger prochainement)
 
 # Les erreurs que j'ai rencontrées
 
@@ -171,6 +269,8 @@ Puis `ENTER` (le programme ne s'actualise pas tant que tu ne cliques pas sur `EN
 
 ## Intersection avec soi-même
 
+Lorsque le rayon réfléchi est émis d'une surface, si je ne déplace pas l'object d'un petit **delta** en direction de la normale de l'object, le rayon à une forte de chance d'intersecter avec la surface initiale à cause de la discrétisation de l'espace.
+
 ![self-color-err](./outputs/be2-bounce-artefact.png)
 
 ## Éclairage indirect saturé
@@ -178,6 +278,14 @@ Puis `ENTER` (le programme ne s'actualise pas tant que tu ne cliques pas sur `EN
 ![indirect-err](./outputs/indirect-lighting-error.png)
 
 ## Erreur de `type`
+
+Lors du parcours des pixels selon `x` et `y` entre `0` et `width` ou `height` respectivement, j'ai utilisé le type `unsigned int` pour `x` et `y`.
+
+Cependant, je soustrait une valeur (la moitié de la taille de l'écran) à `x` et `y` pour recentrer le rayon. Si `x` ou `y` sont trop faibles (inférieur à la moitié de la taille de l'écran), le calcul est négatif, hors un `unsigned int` ne peut pas l'être, ce qui résulte en la limite supérieur au type `unsigned int`.
+
+Cela donne un rayon partant d'éexcessivement loin qui n'intersecte avec rien, d'où le découpage en carré uniforme noir ou gris (gris si dans une des sphères consituant les murs extérieurs).
+
+Il suffit *(après trois heures d'incompréhension)* d'utiliser le type `int` pour supprimer l'erreur.
 
 ![unsigned-int](./outputs/dog-pragma-unsigned-int-error.png)
 
@@ -187,7 +295,7 @@ Puis `ENTER` (le programme ne s'actualise pas tant que tu ne cliques pas sur `EN
 
 ---
 
-> Les informations ci-dessous ne sont plus à jour.
+> Les informations ci-dessous ne sont plus à jour et ne font pas partie du rapport. Je les laisse à titre de *pense-bête* lors de mes futures utilisations de ce répertoire. 
 
 # Notes
 - [x] Calcul parallèle avec `<thread>`
