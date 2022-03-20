@@ -1,6 +1,6 @@
 > Le rapport au format PDF est diponible dans l'onglet **Actions** > **Workflows** > **Docs to PDF**. Sélectionner ensuite le dernier *job* exécuté et télécharger le dossier `report` dans la catégorie **Artefacts**.
 
-> **_Le rapport est une version PDF du README.md, les GIF ne fonctionnent pas, si cela est possible, il sera préférable de lire directement le README.md_**
+> **_Le rapport est une version PDF du README.md, si cela est possible, il sera préférable de lire directement le README.md. De plus les images ne s'affichent pas dans le rapport au format PDF pour une raison qui m'est inconnue_**
 
 # Informatique Graphique
 
