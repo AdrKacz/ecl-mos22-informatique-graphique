@@ -17,7 +17,7 @@
 
 #define MESH_PATH "meshes/dog.obj"
 #define USE_FOCAL_DISTANCE false
-#define FOCAL_DISTANCE 40
+#define FOCAL_DISTANCE 20
 #define USE_BOX_MULLER false
 #define USE_INDIRECT_LIGHTING false
 #define DYNAMIC_MOVEMENT false // true to move with arrow key, false to generate one image

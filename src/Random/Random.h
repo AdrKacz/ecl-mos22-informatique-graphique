@@ -13,6 +13,7 @@
 namespace randh
 {
     Vector box_muller();
+    Vector box_muller(double);
     Vector random_cos(const Vector &N);
 }
 

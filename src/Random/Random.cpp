@@ -29,6 +29,24 @@ Vector randh::box_muller()
     return Vector(x, y, 0);
 };
 
+Vector randh::box_muller(double sigma)
+{
+    int thread_num = omp_get_thread_num();
+
+    double u, v;
+    do
+    {
+        u = uniform(engine[thread_num]);
+    } while (u <= epsilon);
+    v = uniform(engine[thread_num]);
+
+    double mag = sigma * sqrt(-2.0 * log(u));
+    double x = mag * cos(2 * M_PI * v);
+    double y = mag * sin(2 * M_PI * v);
+
+    return Vector(x, y, 0);
+};
+
 Vector randh::random_cos(const Vector &N) // Retourne omega_i
 {
     int thread_num = omp_get_thread_num();

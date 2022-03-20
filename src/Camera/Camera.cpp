@@ -46,7 +46,7 @@ const Vector Camera::get_position()
 const Ray Camera::get_ray(const Vector& u)
 {
     // TODO: Circular aperture, Ray r = Ray(C.get_position(), C.look_from(u));
-    Vector box = randh::box_muller();
+    Vector box = randh::box_muller(0.25);
     double dx = box[0];
     double dy = box[1];
 
