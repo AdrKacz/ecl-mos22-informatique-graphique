@@ -217,7 +217,7 @@ GET_COLOT (POINT):
     <img src="outputs/be4-light-r20.png" width="32%">
 </p>
 
-Les chances d'arriver jusqu'à une boule émissive au hasard sont faibles, l'environment est donc sombre. Pour contrer ce problème, j'envoie deux rayons pour l'éclairage indirect :
+Les chances d'arriver jusqu'à une boule émissive au hasard sont faibles, plusieurs pixels sont donc noires ce qui crée un bruit. Pour contrer ce problème, j'envoie deux rayons pour l'éclairage indirect :
 - un dans une direction uniformément aléatoire *(le même que jusqu'à présent)* ;
 - un dans la direction d'une boule émissive.
 
